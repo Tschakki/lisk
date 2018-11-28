@@ -347,7 +347,7 @@ describe('rounds', () => {
 				return Promise.join(
 					getMemAccounts(),
 					getDelegates(),
-					generateDelegateListPromise(tick.before.round, null),
+					generateDelegateListPromise(tick.before.round),
 					Queries.getDelegatesOrderedByVote(),
 					(_accounts, _delegates, _delegatesList, _delegatesOrderedByVote) => {
 						tick.before.accounts = _.cloneDeep(_accounts);
@@ -372,8 +372,7 @@ describe('rounds', () => {
 								getMemAccounts(),
 								getDelegates(),
 								generateDelegateListPromise(
-									slots.calcRound(tick.after.block.height + 1),
-									null
+									slots.calcRound(tick.after.block.height + 1)
 								),
 								Queries.getDelegatesOrderedByVote(),
 								(
@@ -560,7 +559,7 @@ describe('rounds', () => {
 			return Promise.join(
 				getMemAccounts(),
 				getDelegates(),
-				generateDelegateListPromise(slots.calcRound(lastBlock.height), null),
+				generateDelegateListPromise(slots.calcRound(lastBlock.height)),
 				(_accounts, _delegates, _delegatesList) => {
 					// Get genesis accounts address - should be senderId from first transaction
 					const genesisAddress =
@@ -723,8 +722,7 @@ describe('rounds', () => {
 			it('should generate a different delegate list than one generated at the beginning of round 1', () => {
 				const lastBlock = library.modules.blocks.lastBlock.get();
 				return generateDelegateListPromise(
-					slots.calcRound(lastBlock.height + 1),
-					null
+					slots.calcRound(lastBlock.height + 1)
 				).then(delegatesList => {
 					expect(delegatesList).to.not.deep.equal(round.delegatesList);
 				});
@@ -782,8 +780,7 @@ describe('rounds', () => {
 			it('delegates list should be equal to one generated at the beginning of round 1', () => {
 				const lastBlock = library.modules.blocks.lastBlock.get();
 				return generateDelegateListPromise(
-					slots.calcRound(lastBlock.height + 1),
-					null
+					slots.calcRound(lastBlock.height + 1)
 				).then(delegatesList => {
 					expect(delegatesList).to.deep.equal(round.delegatesList);
 				});
@@ -808,8 +805,7 @@ describe('rounds', () => {
 			it('delegates list should be equal to one generated at the beginning of round 1', () => {
 				const lastBlock = library.modules.blocks.lastBlock.get();
 				return generateDelegateListPromise(
-					slots.calcRound(lastBlock.height + 1),
-					null
+					slots.calcRound(lastBlock.height + 1)
 				).then(delegatesList => {
 					expect(delegatesList).to.deep.equal(round.delegatesList);
 				});
@@ -899,8 +895,7 @@ describe('rounds', () => {
 				it('delegates list should be different than one generated at the beginning of round 1', () => {
 					const lastBlock = library.modules.blocks.lastBlock.get();
 					return generateDelegateListPromise(
-						slots.calcRound(lastBlock.height + 1),
-						null
+						slots.calcRound(lastBlock.height + 1)
 					).then(delegatesList => {
 						expect(delegatesList).to.not.deep.equal(round.delegatesList);
 					});
@@ -921,8 +916,7 @@ describe('rounds', () => {
 					return deleteLastBlockPromise().then(() => {
 						const lastBlock = library.modules.blocks.lastBlock.get();
 						return generateDelegateListPromise(
-							slots.calcRound(lastBlock.height),
-							null
+							slots.calcRound(lastBlock.height)
 						).then(delegatesList => {
 							expect(delegatesList).to.deep.equal(round.delegatesList);
 						});
@@ -1026,10 +1020,7 @@ describe('rounds', () => {
 
 					return Promise.join(
 						getDelegates(),
-						generateDelegateListPromise(
-							slots.calcRound(lastBlock.height + 1),
-							null
-						),
+						generateDelegateListPromise(slots.calcRound(lastBlock.height + 1)),
 						(_delegates, _delegatesList) => {
 							delegatesList = _delegatesList;
 							delegates = _delegates;
@@ -1079,8 +1070,7 @@ describe('rounds', () => {
 					return deleteLastBlockPromise().then(() => {
 						lastBlock = library.modules.blocks.lastBlock.get();
 						return generateDelegateListPromise(
-							slots.calcRound(lastBlock.height),
-							null
+							slots.calcRound(lastBlock.height)
 						).then(delegatesList => {
 							expect(delegatesList).to.deep.equal(round.delegatesList);
 						});
