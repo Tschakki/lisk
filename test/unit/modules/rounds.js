@@ -254,7 +254,7 @@ describe('rounds', () => {
 					// Bind fake modules
 					modules = {
 						delegates: {
-							generateDelegateList(a, b, cb) {
+							generateDelegateList(a, cb) {
 								return cb(null, ['delegate1', 'delegate2', 'delegate3']);
 							},
 						},
@@ -348,7 +348,7 @@ describe('rounds', () => {
 					// Bind fake modules
 					var modules = {
 						delegates: {
-							generateDelegateList(a, b, cb) {
+							generateDelegateList(a, cb) {
 								cb('error');
 							},
 						},

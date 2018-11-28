@@ -36,7 +36,7 @@ function getDelegateForSlot(library, slot, cb) {
 	var lastBlock = library.modules.blocks.lastBlock.get();
 	const round = slots.calcRound(lastBlock.height + 1);
 
-	library.modules.delegates.generateDelegateList(round, null, (err, list) => {
+	library.modules.delegates.generateDelegateList(round, (err, list) => {
 		var delegatePublicKey = list[slot % ACTIVE_DELEGATES];
 		return cb(err, delegatePublicKey);
 	});

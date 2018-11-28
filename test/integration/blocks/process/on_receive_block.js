@@ -83,13 +83,9 @@ describe('system test (blocks) - process onReceiveBlock()', () => {
 
 		function getNextForger(offset, seriesCb) {
 			offset = !offset ? 0 : offset;
-			var keys = library.rewiredModules.delegates.__get__(
-				'__private.getKeysSortByVote'
-			);
 			const round = slots.calcRound(last_block.height + 1);
 			library.modules.delegates.generateDelegateList(
 				round,
-				keys,
 				(err, delegateList) => {
 					var nextForger = delegateList[(slot + offset) % ACTIVE_DELEGATES];
 					return seriesCb(nextForger);
@@ -186,7 +182,7 @@ describe('system test (blocks) - process onReceiveBlock()', () => {
 		var lastBlock = library.modules.blocks.lastBlock.get();
 		const round = slots.calcRound(lastBlock.height);
 
-		return generateDelegateListPromisified(round, null)
+		return generateDelegateListPromisified(round)
 			.then(list => {
 				var delegatePublicKey = list[slot % ACTIVE_DELEGATES];
 				return getKeypair(
