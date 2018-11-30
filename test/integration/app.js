@@ -292,11 +292,11 @@ describe('app', () => {
 	});
 
 	describe('modules.delegates', () => {
-		let generateDelegateListPromise;
+		let getForgersListPromise;
 
 		before(done => {
-			generateDelegateListPromise = Promise.promisify(
-				library.modules.delegates.generateDelegateList
+			getForgersListPromise = Promise.promisify(
+				library.modules.delegates.getForgersList
 			);
 			done();
 		});
@@ -305,7 +305,7 @@ describe('app', () => {
 			let delegatesList;
 
 			before(() => {
-				return generateDelegateListPromise(1).then(_delegatesList => {
+				return getForgersListPromise(1).then(_delegatesList => {
 					delegatesList = _delegatesList;
 				});
 			});

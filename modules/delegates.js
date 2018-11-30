@@ -160,23 +160,20 @@ __private.getDelegatesFromPreviousRound = function(cb, tx) {
  * @todo Add description for the params
  */
 __private.getDelegateKeypairForCurrentSlot = function(currentSlot, round, cb) {
-	self.generateDelegateList(
-		round,
-		(generateDelegateListErr, activeDelegates) => {
-			if (generateDelegateListErr) {
-				return setImmediate(cb, generateDelegateListErr);
-			}
-
-			const currentSlotIndex = currentSlot % ACTIVE_DELEGATES;
-			const currentSlotDelegate = activeDelegates[currentSlotIndex];
-
-			if (currentSlotDelegate && __private.keypairs[currentSlotDelegate]) {
-				return setImmediate(cb, null, __private.keypairs[currentSlotDelegate]);
-			}
-
-			return setImmediate(cb, null, null);
+	self.getForgersList(round, (getForgersListErr, activeDelegates) => {
+		if (getForgersListErr) {
+			return setImmediate(cb, getForgersListErr);
 		}
-	);
+
+		const currentSlotIndex = currentSlot % ACTIVE_DELEGATES;
+		const currentSlotDelegate = activeDelegates[currentSlotIndex];
+
+		if (currentSlotDelegate && __private.keypairs[currentSlotDelegate]) {
+			return setImmediate(cb, null, __private.keypairs[currentSlotDelegate]);
+		}
+
+		return setImmediate(cb, null, null);
+	});
 };
 
 /**
@@ -661,7 +658,7 @@ Delegates.prototype.updateForgingStatus = function(
  * @returns {setImmediateCallback} cb, err, truncated delegate list
  * @todo Add description for the params
  */
-Delegates.prototype.generateDelegateList = function(round, cb, tx) {
+Delegates.prototype.getForgersList = function(round, cb, tx) {
 	// Set default function for getting delegates
 	const lastBlockRound = slots.calcRound(modules.blocks.lastBlock.get().height);
 	const source =
@@ -706,7 +703,7 @@ Delegates.prototype.generateDelegateList = function(round, cb, tx) {
  */
 Delegates.prototype.validateBlockSlot = function(block, cb) {
 	const round = slots.calcRound(block.height);
-	self.generateDelegateList(round, (err, activeDelegates) => {
+	self.getForgersList(round, (err, activeDelegates) => {
 		if (err) {
 			return setImmediate(cb, err);
 		}
@@ -785,7 +782,7 @@ Delegates.prototype.getForgers = function(query, cb) {
 	// For example: last block height is 101 (still round 1, but already finished), then we want the list for round 2 (height 102)
 	const round = slots.calcRound(currentBlock.height + 1);
 
-	self.generateDelegateList(round, (err, activeDelegates) => {
+	self.getForgersList(round, (err, activeDelegates) => {
 		if (err) {
 			return setImmediate(cb, err);
 		}

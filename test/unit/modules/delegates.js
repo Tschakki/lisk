@@ -548,7 +548,7 @@ describe('delegates', () => {
 				const currentSlot = 35;
 				const round = 1;
 
-				delegates.generateDelegateList = (round, cb) => {
+				delegates.getForgersList = (round, cb) => {
 					cb(null, delegatesRoundsList[round]);
 				};
 
@@ -573,7 +573,7 @@ describe('delegates', () => {
 				const currentSlot = 578;
 				const round = 2;
 
-				delegates.generateDelegateList = (round, cb) => {
+				delegates.getForgersList = (round, cb) => {
 					cb(null, delegatesRoundsList[round]);
 				};
 
@@ -598,7 +598,7 @@ describe('delegates', () => {
 				const currentSlot = 1051;
 				const round = 3;
 
-				delegates.generateDelegateList = (round, cb) => {
+				delegates.getForgersList = (round, cb) => {
 					cb(null, delegatesRoundsList[round]);
 				};
 
@@ -624,7 +624,7 @@ describe('delegates', () => {
 				const currentSlot = 1;
 				const round = 4;
 
-				delegates.generateDelegateList = (round, cb) => {
+				delegates.getForgersList = (round, cb) => {
 					cb(null, delegatesRoundsList[round]);
 				};
 
@@ -639,19 +639,19 @@ describe('delegates', () => {
 				);
 			});
 
-			it('should return error when `generateDelegateList` fails', done => {
+			it('should return error when `getForgersList` fails', done => {
 				const currentSlot = 1;
 				const round = 4;
 
-				delegates.generateDelegateList = (round, cb) => {
-					cb('generateDelegateList error');
+				delegates.getForgersList = (round, cb) => {
+					cb('getForgersList error');
 				};
 
 				__private.getDelegateKeypairForCurrentSlot(
 					currentSlot,
 					round,
 					(err, keyPair) => {
-						expect(err).to.be.eql('generateDelegateList error');
+						expect(err).to.be.eql('getForgersList error');
 						expect(keyPair).to.be.undefined;
 						done();
 					}

@@ -247,14 +247,14 @@ describe('rounds', () => {
 		describe('when scope.block.height != 1', () => {
 			var scope = { block: { height: 2 } };
 
-			describe('when generateDelegateList is successful', () => {
+			describe('when getForgersList is successful', () => {
 				var modules;
 
 				before(() => {
 					// Bind fake modules
 					modules = {
 						delegates: {
-							generateDelegateList(a, cb) {
+							getForgersList(a, cb) {
 								return cb(null, ['delegate1', 'delegate2', 'delegate3']);
 							},
 						},
@@ -343,12 +343,12 @@ describe('rounds', () => {
 				});
 			});
 
-			describe('when generateDelegateList fails', () => {
+			describe('when getForgersList fails', () => {
 				before(() => {
 					// Bind fake modules
 					var modules = {
 						delegates: {
-							generateDelegateList(a, cb) {
+							getForgersList(a, cb) {
 								cb('error');
 							},
 						},

@@ -156,13 +156,13 @@ function createBlock(
 }
 
 function getValidKeypairForSlot(library, slot) {
-	var generateDelegateListPromisified = Promise.promisify(
-		library.modules.delegates.generateDelegateList
+	var getForgersListPromisified = Promise.promisify(
+		library.modules.delegates.getForgersList
 	);
 	var lastBlock = genesisBlock;
 	const round = slots.calcRound(lastBlock.height);
 
-	return generateDelegateListPromisified(round)
+	return getForgersListPromisified(round)
 		.then(list => {
 			var delegatePublicKey = list[slot % ACTIVE_DELEGATES];
 			var passphrase = _.find(genesisDelegates, delegate => {
@@ -887,7 +887,7 @@ describe('blocks/verify', () => {
 					if (err) {
 						return done(err);
 					}
-					return delegates.generateDelegateList(1, done);
+					return delegates.getForgersList(1, done);
 				}
 			);
 		});

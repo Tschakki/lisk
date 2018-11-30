@@ -349,7 +349,7 @@ __private.getOutsiders = function(scope, cb, tx) {
 	if (scope.block.height === 1) {
 		return setImmediate(cb);
 	}
-	return modules.delegates.generateDelegateList(
+	return modules.delegates.getForgersList(
 		scope.round,
 		(err, roundDelegates) => {
 			if (err) {
