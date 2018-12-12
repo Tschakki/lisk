@@ -59,12 +59,12 @@ module.exports = function(config) {
 	};
 
 	function snipFragileData(data) {
-		Object.keys(data).forEach(key => {
+		return Object.keys(data).map(key => {
 			if (key.search(/passphrase|password/i) > -1) {
 				data[key] = 'XXXXXXXXXX';
 			}
+			return data[key];
 		});
-		return data;
 	}
 
 	Object.keys(config.levels).forEach(name => {
