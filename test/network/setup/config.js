@@ -36,7 +36,7 @@ const SYNC_MODES = {
 
 const SYNC_MODE_DEFAULT_ARGS = {
 	RANDOM: {
-		probability: 0.5, // (0 - 1)
+		probability: 0, // (0 - 1)
 	},
 	ALL_TO_GROUP: {
 		indices: [],
