@@ -33,8 +33,9 @@ module.exports = function(config) {
 		log: 2,
 		info: 3,
 		warn: 4,
-		error: 5,
-		fatal: 6,
+		elk: 5,
+		error: 6,
+		fatal: 7,
 	};
 
 	config.level_abbr = config.level_abbr || {
@@ -43,6 +44,7 @@ module.exports = function(config) {
 		log: 'log',
 		info: 'inf',
 		warn: 'WRN',
+		elk: 'ELK',
 		error: 'ERR',
 		fatal: 'FTL',
 	};
