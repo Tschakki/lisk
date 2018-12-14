@@ -133,8 +133,18 @@ class Broadcaster {
 				},
 				function sendToPeer(peers, waterCb) {
 					library.logger.debug('Begin broadcast', options);
+					library.logger.elk({
+						event: options.api,
+						data: options.data,
+						progress: 'start',
+					});
 					peers.forEach(peer => peer.rpc[options.api](options.data));
 					library.logger.debug('End broadcast');
+					library.logger.elk({
+						event: options.api,
+						data: options.data,
+						progress: 'stop',
+					});
 					return setImmediate(waterCb, null, peers);
 				},
 			],
