@@ -350,7 +350,7 @@ __private.loadTransactions = function(cb) {
 
 						return setImmediate(eachSeriesCb);
 					},
-					err => setImmediate(waterCb, err, transactions)
+					err => setImmediate(waterCb, err, transactions, peer)
 				);
 			},
 			function(transactions, peer, waterCb) {
