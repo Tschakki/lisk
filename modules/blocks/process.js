@@ -439,7 +439,7 @@ Process.prototype.loadBlocksFromPeer = function(peer, cb) {
 	library.logger.info(`Loading blocks from: ${peer.string}`);
 
 	function getFromPeer(seriesCb) {
-		library.logger.elk({ event: 'blocks', peer, progress: 'start' });
+		library.logger.elk(JSON.stringify({ event: 'blocks', peer, progress: 'start' }));
 		peer.rpc.blocks(
 			{ lastBlockId: lastValidBlock.id, peer: library.logic.peers.me() },
 			(err, res) => {
@@ -448,7 +448,7 @@ Process.prototype.loadBlocksFromPeer = function(peer, cb) {
 					modules.peers.remove(peer);
 					return setImmediate(seriesCb, err);
 				}
-				library.logger.elk({ event: 'blocks', peer, data: res.blocks, progress: 'processing' });
+				library.logger.elk(JSON.stringify({ event: 'blocks', peer, data: res.blocks, progress: 'processing' }));
 				return setImmediate(seriesCb, null, res.blocks);
 			}
 		);
@@ -496,12 +496,12 @@ Process.prototype.loadBlocksFromPeer = function(peer, cb) {
 			if (!err) {
 				// Update last valid block
 				lastValidBlock = block;
-				library.logger.elk({
+				library.logger.elk(JSON.stringify({
 					event: 'blocks',
 					data: block,
 					peer,
 					progress: 'stop',
-				});
+				}));
 				library.logger.info(
 					['Block', block.id, 'loaded from:', peer.string].join(' '),
 					`height: ${block.height}`

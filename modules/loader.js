@@ -201,14 +201,14 @@ __private.loadSignatures = function(cb) {
 				});
 			},
 			function(peer, waterCb) {
-				library.logger.elk({event: 'getSignatures', peer, progress: 'start'});
+				library.logger.elk(JSON.stringify({event: 'getSignatures', peer, progress: 'start'}));
 				library.logger.log(`Loading signatures from: ${peer.string}`);
 				peer.rpc.getSignatures((err, res) => {
 					if (err) {
 						modules.peers.remove(peer);
 						return setImmediate(waterCb, err);
 					}
-					library.logger.elk({event: 'getSignatures', peer, data: res.signatures, progress: 'processing'});
+					library.logger.elk(JSON.stringify({event: 'getSignatures', peer, data: res.signatures, progress: 'processing'}));
 					library.schema.validate(res, definitions.WSSignaturesResponse, err =>
 						setImmediate(waterCb, err, res.signatures)
 					);
@@ -236,7 +236,7 @@ __private.loadSignatures = function(cb) {
 						cb
 					);
 				}, waterCb);
-				library.logger.elk({event: 'getSignatures', peer, data: singatures, progress: 'stop'});
+				library.logger.elk(JSON.stringify({event: 'getSignatures', peer, data: singatures, progress: 'stop'}));
 			},
 		],
 		err => setImmediate(cb, err)
@@ -268,14 +268,14 @@ __private.loadTransactions = function(cb) {
 				});
 			},
 			function(peer, waterCb) {
-				library.logger.elk({event: 'getTransactions', peer, progress: 'start'});
+				library.logger.elk(JSON.stringify({event: 'getTransactions', peer, progress: 'start'}));
 				library.logger.log(`Loading transactions from: ${peer.string}`);
 				peer.rpc.getTransactions((err, res) => {
 					if (err) {
 						modules.peers.remove(peer);
 						return setImmediate(waterCb, err);
 					}
-					library.logger.elk({event: 'getTransactions', data: res.transactions, peer, progress: 'processing'});
+					library.logger.elk(JSON.stringify({event: 'getTransactions', data: res.transactions, peer, progress: 'processing'}));
 					library.schema.validate(
 						res,
 						definitions.WSTransactionsResponse,
@@ -344,7 +344,7 @@ __private.loadTransactions = function(cb) {
 					},
 					waterCb
 				);
-				library.logger.elk({event: 'getTransactions', peer, data: transactions, progress: 'stop'});
+				library.logger.elk(JSON.stringify({event: 'getTransactions', peer, data: transactions, progress: 'stop'}));
 			},
 		],
 		err => setImmediate(cb, err)
