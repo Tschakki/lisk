@@ -897,6 +897,19 @@ Delegates.prototype.fork = function(block, cause) {
 		},
 		cause,
 	});
+	library.logger.elk(
+		JSON.stringify({
+			event: 'fork',
+			delegate: block.generatorPublicKey,
+			block: {
+				id: block.id,
+				timestamp: block.timestamp,
+				height: block.height,
+				previousBlock: block.previousBlock,
+			},
+			cause,
+		})
+	);
 
 	const fork = {
 		delegatePublicKey: block.generatorPublicKey,
