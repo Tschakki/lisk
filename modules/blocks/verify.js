@@ -852,6 +852,13 @@ Verify.prototype.processBlock = function(block, broadcast, saveBlock, cb) {
 			broadcastHeaders(seriesCb) {
 				// Notify all remote peers about our new headers
 				broadcast ? modules.transport.broadcastHeaders(seriesCb) : seriesCb();
+				library.logger.elk(
+					JSON.stringify({
+						event: 'receiveBlock',
+						progess: 'stop',
+						data: block,
+					})
+				);
 			},
 		},
 		err => setImmediate(cb, err)

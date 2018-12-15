@@ -197,6 +197,13 @@ __private.receiveTransactions = function(
 			}
 		});
 	});
+	library.logger.elk(
+		JSON.stringify({
+			event: 'receiveTransactions',
+			progess: 'stop',
+			data: transactions,
+		})
+	);
 };
 
 /**
@@ -592,6 +599,18 @@ Transport.prototype.shared = {
 				'Receiving blocks disabled by user through config.json'
 			);
 		}
+		const peer =
+			query.nonce !== undefined
+				? library.logic.peers.peersManager.getByNonce(query.nonce)
+				: { string: 'null' };
+		library.logger.elk(
+			JSON.stringify({
+				event: 'receiveBlock',
+				progess: 'start',
+				peer: peer.string,
+				data: query.block,
+			})
+		);
 		query = query || {};
 		library.schema.validate(query, definitions.WSBlocksBroadcast, err => {
 			if (err) {
@@ -617,17 +636,6 @@ Transport.prototype.shared = {
 
 				__private.removePeer({ nonce: query.nonce, code: 'EBLOCK' });
 			}
-			const peer =
-				query.nonce !== undefined
-					? library.logic.peers.peersManager.getByNonce(query.nonce)
-					: { string: 'null' };
-			library.logger.elk(
-				JSON.stringify({
-					event: 'postBlock',
-					peer: peer.string,
-					data: block,
-				})
-			);
 			library.bus.message('receiveBlock', block);
 		});
 	},
@@ -803,6 +811,18 @@ Transport.prototype.shared = {
 	 * @todo Add description of the function
 	 */
 	postTransactions(query) {
+		const peer =
+			query.nonce !== undefined
+				? library.logic.peers.peersManager.getByNonce(query.nonce)
+				: { string: 'null' };
+		library.logger.elk(
+			JSON.stringify({
+				event: 'receiveTransactions',
+				progess: 'start',
+				peer: peer.string,
+				data: query.transactions,
+			})
+		);
 		if (!library.config.broadcasts.active) {
 			return library.logger.debug(
 				'Receiving transactions disabled by user through config.json'
