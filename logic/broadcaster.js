@@ -136,9 +136,9 @@ class Broadcaster {
 					library.logger.elk(
 						JSON.stringify({
 							event: options.api,
+							progress: 'start broadcast',
 							peers,
 							data: options.data,
-							progress: 'start broadcast',
 						})
 					);
 					peers.forEach(peer => peer.rpc[options.api](options.data));
@@ -146,9 +146,9 @@ class Broadcaster {
 					library.logger.elk(
 						JSON.stringify({
 							event: options.api,
+							progress: 'stop broadcast',
 							peers,
 							data: options.data,
-							progress: 'stop broadcast',
 						})
 					);
 					return setImmediate(waterCb, null, peers);

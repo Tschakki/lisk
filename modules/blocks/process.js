@@ -440,7 +440,7 @@ Process.prototype.loadBlocksFromPeer = function(peer, cb) {
 
 	function getFromPeer(seriesCb) {
 		library.logger.elk(
-			JSON.stringify({ event: 'blocks', peer: peer.string, progress: 'start' })
+			JSON.stringify({ event: 'blocks', progress: 'start', peer: peer.string })
 		);
 		peer.rpc.blocks(
 			{ lastBlockId: lastValidBlock.id, peer: library.logic.peers.me() },
@@ -453,9 +453,9 @@ Process.prototype.loadBlocksFromPeer = function(peer, cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'blocks',
+						progress: 'processing',
 						peer: peer.string,
 						data: res.blocks,
-						progress: 'processing',
 					})
 				);
 				return setImmediate(seriesCb, null, res.blocks);
@@ -508,9 +508,9 @@ Process.prototype.loadBlocksFromPeer = function(peer, cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'blocks',
+						progress: 'stop',
 						peer: peer.string,
 						data: block,
-						progress: 'stop',
 					})
 				);
 				library.logger.info(

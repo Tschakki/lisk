@@ -204,8 +204,8 @@ __private.loadSignatures = function(cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'getSignatures',
-						peer: peer.string,
 						progress: 'start',
+						peer: peer.string,
 					})
 				);
 				library.logger.log(`Loading signatures from: ${peer.string}`);
@@ -217,9 +217,9 @@ __private.loadSignatures = function(cb) {
 					library.logger.elk(
 						JSON.stringify({
 							event: 'getSignatures',
+							progress: 'processing',
 							peer: peer.string,
 							data: res.signatures,
-							progress: 'processing',
 						})
 					);
 					library.schema.validate(res, definitions.WSSignaturesResponse, err =>
@@ -252,9 +252,9 @@ __private.loadSignatures = function(cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'getSignatures',
+						progress: 'stop',
 						peer: peer.string,
 						data: signatures,
-						progress: 'stop',
 					})
 				);
 			},
@@ -291,8 +291,8 @@ __private.loadTransactions = function(cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'getTransactions',
-						peer: peer.string,
 						progress: 'start',
+						peer: peer.string,
 					})
 				);
 				library.logger.log(`Loading transactions from: ${peer.string}`);
@@ -304,9 +304,9 @@ __private.loadTransactions = function(cb) {
 					library.logger.elk(
 						JSON.stringify({
 							event: 'getTransactions',
-							data: res.transactions,
-							peer: peer.string,
 							progress: 'processing',
+							peer: peer.string,
+							data: res.transactions,
 						})
 					);
 					library.schema.validate(
@@ -380,9 +380,9 @@ __private.loadTransactions = function(cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'getTransactions',
+						progress: 'stop',
 						peer: peer.string,
 						data: transactions,
-						progress: 'stop',
 					})
 				);
 			},
