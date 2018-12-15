@@ -137,7 +137,7 @@ class Broadcaster {
 						JSON.stringify({
 							event: options.api,
 							progress: 'start broadcast',
-							peers,
+							peers: Object.keys(peers),
 							data: options.data,
 						})
 					);
@@ -147,7 +147,7 @@ class Broadcaster {
 						JSON.stringify({
 							event: options.api,
 							progress: 'stop broadcast',
-							peers,
+							peers: Object.keys(peers),
 							data: options.data,
 						})
 					);
