@@ -201,18 +201,20 @@ __private.loadSignatures = function(cb) {
 				});
 			},
 			function(peer, waterCb) {
+				library.logger.elk({event: 'getSignatures', peer, progress: 'start'});
 				library.logger.log(`Loading signatures from: ${peer.string}`);
 				peer.rpc.getSignatures((err, res) => {
 					if (err) {
 						modules.peers.remove(peer);
 						return setImmediate(waterCb, err);
 					}
+					library.logger.elk({event: 'getSignatures', peer, data: res.signatures, progress: 'processing'});
 					library.schema.validate(res, definitions.WSSignaturesResponse, err =>
 						setImmediate(waterCb, err, res.signatures)
 					);
 				});
 			},
-			function(signatures, waterCb) {
+			function(signatures, peer, waterCb) {
 				library.sequence.add(cb => {
 					async.eachSeries(
 						signatures,
@@ -234,6 +236,7 @@ __private.loadSignatures = function(cb) {
 						cb
 					);
 				}, waterCb);
+				library.logger.elk({event: 'getSignatures', peer, data: singatures, progress: 'stop'});
 			},
 		],
 		err => setImmediate(cb, err)
@@ -265,12 +268,14 @@ __private.loadTransactions = function(cb) {
 				});
 			},
 			function(peer, waterCb) {
+				library.logger.elk({event: 'getTransactions', peer, progress: 'start'});
 				library.logger.log(`Loading transactions from: ${peer.string}`);
 				peer.rpc.getTransactions((err, res) => {
 					if (err) {
 						modules.peers.remove(peer);
 						return setImmediate(waterCb, err);
 					}
+					library.logger.elk({event: 'getTransactions', data: res.transactions, peer, progress: 'processing'});
 					library.schema.validate(
 						res,
 						definitions.WSTransactionsResponse,
@@ -315,7 +320,7 @@ __private.loadTransactions = function(cb) {
 					err => setImmediate(waterCb, err, transactions)
 				);
 			},
-			function(transactions, waterCb) {
+			function(transactions, peer, waterCb) {
 				async.eachSeries(
 					transactions,
 					(transaction, eachSeriesCb) => {
@@ -339,6 +344,7 @@ __private.loadTransactions = function(cb) {
 					},
 					waterCb
 				);
+				library.logger.elk({event: 'getTransactions', peer, data: transactions, progress: 'stop'});
 			},
 		],
 		err => setImmediate(cb, err)

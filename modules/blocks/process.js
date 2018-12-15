@@ -448,6 +448,7 @@ Process.prototype.loadBlocksFromPeer = function(peer, cb) {
 					modules.peers.remove(peer);
 					return setImmediate(seriesCb, err);
 				}
+				library.logger.elk({ event: 'blocks', peer, data: res.blocks, progress: 'processing' });
 				return setImmediate(seriesCb, null, res.blocks);
 			}
 		);
