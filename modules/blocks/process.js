@@ -508,8 +508,8 @@ Process.prototype.loadBlocksFromPeer = function(peer, cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'blocks',
-						data: block,
 						peer: peer.string,
+						data: block,
 						progress: 'stop',
 					})
 				);

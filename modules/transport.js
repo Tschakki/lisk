@@ -618,7 +618,13 @@ Transport.prototype.shared = {
 				__private.removePeer({ nonce: query.nonce, code: 'EBLOCK' });
 			}
 			const peer = library.logic.peers.peerManager.getByNonce(query.nonce);
-			library.logger.elk(JSON.stringify({ liskEvent: 'receiveBlock', data: block, peer }));
+			library.logger.elk(
+				JSON.stringify({
+					event: 'receiveBlock',
+					peer: peer.string,
+					data: block,
+				})
+			);
 			library.bus.message('receiveBlock', block);
 		});
 	},

@@ -252,7 +252,7 @@ __private.loadSignatures = function(cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'getSignatures',
-						peer,
+						peer: peer.string,
 						data: signatures,
 						progress: 'stop',
 					})
