@@ -617,10 +617,13 @@ Transport.prototype.shared = {
 
 				__private.removePeer({ nonce: query.nonce, code: 'EBLOCK' });
 			}
-			const peer = library.logic.peers.peerManager.getByNonce(query.nonce);
+			const peer =
+				query.nonce !== undefined
+					? library.logic.peers.peerManager.getByNonce(query.nonce)
+					: { string: 'null' };
 			library.logger.elk(
 				JSON.stringify({
-					event: 'receiveBlock',
+					event: 'postBlock',
 					peer: peer.string,
 					data: block,
 				})

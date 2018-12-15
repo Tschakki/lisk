@@ -492,7 +492,7 @@ __private.loadBlockChain = function() {
 			library.logger.warn('Recreating memory tables');
 		}
 
-		return load(count);
+		return load(count); /**/
 	}
 
 	/**
