@@ -73,7 +73,7 @@ module.exports = function(config) {
 		function log(message, data) {
 			var log = {
 				level: name,
-				timestamp: strftime('%F %T', new Date()),
+				timestamp: strftime('%F %T.%L', new Date()),
 			};
 
 			if (message instanceof Error) {
