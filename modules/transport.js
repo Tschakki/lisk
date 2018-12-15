@@ -619,7 +619,7 @@ Transport.prototype.shared = {
 			}
 			const peer =
 				query.nonce !== undefined
-					? library.logic.peers.peerManager.getByNonce(query.nonce)
+					? library.logic.peers.peersManager.getByNonce(query.nonce)
 					: { string: 'null' };
 			library.logger.elk(
 				JSON.stringify({
