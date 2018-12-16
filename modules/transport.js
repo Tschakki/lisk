@@ -816,15 +816,11 @@ Transport.prototype.shared = {
 				'Receiving transactions disabled by user through config.json'
 			);
 		}
-		let peer = { string: 'publicClient' };
-		if (query.nonce) {
-			peer = library.logic.peers.peersManager.getByNonce(query.nonce);
-		}
 		library.logger.elk(
 			JSON.stringify({
 				event: 'receiveTransactions',
 				progess: 'start',
-				peer: peer.string,
+				peer: query,
 				data: query.transactions,
 			})
 		);
