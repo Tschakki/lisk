@@ -599,10 +599,11 @@ Transport.prototype.shared = {
 				'Receiving blocks disabled by user through config.json'
 			);
 		}
-		const peer =
-			query.nonce !== undefined
-				? library.logic.peers.peersManager.getByNonce(query.nonce)
-				: { string: 'null' };
+		query = query || {};
+		let peer = { string: 'publicClient' };
+		if (query.nonce) {
+			peer = library.logic.peers.peersManager.getByNonce(query.nonce);
+		}
 		library.logger.elk(
 			JSON.stringify({
 				event: 'receiveBlock',
@@ -611,7 +612,6 @@ Transport.prototype.shared = {
 				data: query.block,
 			})
 		);
-		query = query || {};
 		library.schema.validate(query, definitions.WSBlocksBroadcast, err => {
 			if (err) {
 				return library.logger.debug(
@@ -811,10 +811,15 @@ Transport.prototype.shared = {
 	 * @todo Add description of the function
 	 */
 	postTransactions(query) {
-		const peer =
-			query.nonce !== undefined
-				? library.logic.peers.peersManager.getByNonce(query.nonce)
-				: { string: 'null' };
+		if (!library.config.broadcasts.active) {
+			return library.logger.debug(
+				'Receiving transactions disabled by user through config.json'
+			);
+		}
+		let peer = { string: 'publicClient' };
+		if (query.nonce) {
+			peer = library.logic.peers.peersManager.getByNonce(query.nonce);
+		}
 		library.logger.elk(
 			JSON.stringify({
 				event: 'receiveTransactions',
@@ -823,11 +828,6 @@ Transport.prototype.shared = {
 				data: query.transactions,
 			})
 		);
-		if (!library.config.broadcasts.active) {
-			return library.logger.debug(
-				'Receiving transactions disabled by user through config.json'
-			);
-		}
 		library.schema.validate(query, definitions.WSTransactionsRequest, err => {
 			if (err) {
 				return library.logger.debug('Invalid transactions body', err);
