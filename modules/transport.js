@@ -197,10 +197,16 @@ __private.receiveTransactions = function(
 			}
 		});
 	});
+	let tmpPeer;
+	if (nonce) {
+		tmpPeer = library.logic.peers.peersManager.getByNonce(nonce);
+	}
+	const peer = !tmpPeer ? { string: 'none' } : tmpPeer;
 	library.logger.elk(
 		JSON.stringify({
 			event: 'receiveTransactions',
 			progess: 'stop',
+			peer: peer.string,
 			data: transactions,
 		})
 	);
@@ -611,10 +617,11 @@ Transport.prototype.shared = {
 					}
 				);
 			}
-			let peer = { string: 'publicClient' };
+			let tmpPeer;
 			if (query.nonce) {
-				peer = library.logic.peers.peersManager.getByNonce(query.nonce);
+				tmpPeer = library.logic.peers.peersManager.getByNonce(query.nonce);
 			}
+			const peer = !tmpPeer ? { string: 'none' } : tmpPeer;
 			library.logger.elk(
 				JSON.stringify({
 					event: 'receiveBlock',
