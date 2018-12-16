@@ -133,11 +133,12 @@ class Broadcaster {
 				},
 				function sendToPeer(peers, waterCb) {
 					library.logger.debug('Begin broadcast', options);
+					const peerList = peers.map(peer => peer.string);
 					library.logger.elk(
 						JSON.stringify({
 							event: options.api,
 							progress: 'start broadcast',
-							peerlist: peers[0],
+							peerList,
 							data: options.data,
 						})
 					);
@@ -147,7 +148,7 @@ class Broadcaster {
 						JSON.stringify({
 							event: options.api,
 							progress: 'stop broadcast',
-							peerlist: peers[0],
+							peerList,
 							data: options.data,
 						})
 					);
