@@ -600,18 +600,6 @@ Transport.prototype.shared = {
 			);
 		}
 		query = query || {};
-		let peer = { string: 'publicClient' };
-		if (query.nonce) {
-			peer = library.logic.peers.peersManager.getByNonce(query.nonce);
-		}
-		library.logger.elk(
-			JSON.stringify({
-				event: 'receiveBlock',
-				progess: 'start',
-				peer: peer.string,
-				data: query.block,
-			})
-		);
 		library.schema.validate(query, definitions.WSBlocksBroadcast, err => {
 			if (err) {
 				return library.logger.debug(
@@ -623,6 +611,18 @@ Transport.prototype.shared = {
 					}
 				);
 			}
+			let peer = { string: 'publicClient' };
+			if (query.nonce) {
+				peer = library.logic.peers.peersManager.getByNonce(query.nonce);
+			}
+			library.logger.elk(
+				JSON.stringify({
+					event: 'receiveBlock',
+					progess: 'start',
+					peer: peer.string,
+					data: query.block,
+				})
+			);
 			let block;
 			try {
 				block = modules.blocks.verify.addBlockProperties(query.block);
