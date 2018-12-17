@@ -823,18 +823,23 @@ Transport.prototype.shared = {
 				'Receiving transactions disabled by user through config.json'
 			);
 		}
-		library.logger.elk(
-			JSON.stringify({
-				event: 'receiveTransactions',
-				progess: 'start',
-				peer: query,
-				data: query.transactions,
-			})
-		);
 		library.schema.validate(query, definitions.WSTransactionsRequest, err => {
 			if (err) {
 				return library.logger.debug('Invalid transactions body', err);
 			}
+			let tmpPeer;
+			if (query.nonce) {
+				tmpPeer = library.logic.peers.peersManager.getByNonce(query.nonce);
+			}
+			const peer = !tmpPeer ? { string: 'none' } : tmpPeer;
+			library.logger.elk(
+				JSON.stringify({
+					event: 'receiveTransactions',
+					progress: 'start',
+					peer: peer.string,
+					data: query.transactions,
+				})
+			);
 			__private.receiveTransactions(
 				query.transactions,
 				query.nonce,
