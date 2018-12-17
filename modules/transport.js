@@ -625,7 +625,7 @@ Transport.prototype.shared = {
 			library.logger.elk(
 				JSON.stringify({
 					event: 'receiveBlock',
-					progess: 'start',
+					progress: 'start',
 					peer: peer.string,
 					data: query.block,
 				})

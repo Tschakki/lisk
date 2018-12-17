@@ -855,7 +855,7 @@ Verify.prototype.processBlock = function(block, broadcast, saveBlock, cb) {
 				library.logger.elk(
 					JSON.stringify({
 						event: 'receiveBlock',
-						progess: 'stop',
+						progress: 'stop',
 						data: block,
 					})
 				);
