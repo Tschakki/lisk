@@ -205,7 +205,7 @@ __private.receiveTransactions = function(
 	library.logger.elk(
 		JSON.stringify({
 			event: 'receiveTransactions',
-			progess: 'stop',
+			progress: 'stop',
 			peer: peer.string,
 			data: transactions,
 		})
