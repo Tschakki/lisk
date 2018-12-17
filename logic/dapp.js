@@ -85,7 +85,7 @@ DApp.prototype.verify = function(transaction, sender, cb, tx) {
 	}
 
 	const amount = new Bignum(transaction.amount);
-	if (amount.greaterThan(0)) {
+	if (amount.isGreaterThan(0)) {
 		return setImmediate(cb, 'Invalid transaction amount');
 	}
 
@@ -190,7 +190,7 @@ DApp.prototype.verify = function(transaction, sender, cb, tx) {
 		}
 	}
 
-	(tx || library.db).dapps
+	return (tx || library.db).dapps
 		.getExisting({
 			name: transaction.asset.dapp.name,
 			link: transaction.asset.dapp.link || null,

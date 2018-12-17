@@ -14,19 +14,21 @@
 
 'use strict';
 
-var popsicle = require('popsicle');
-var async = require('async');
-var Promise = require('bluebird');
-var slots = require('../../../helpers/slots');
-var apiHelpers = require('../helpers/api');
+const popsicle = require('popsicle');
+const async = require('async');
+const Promise = require('bluebird');
+const slots = require('../../../helpers/slots');
+const apiHelpers = require('../helpers/api');
+
+const { ACTIVE_DELEGATES } = global.constants;
 
 /**
- * @param {function} cb
  * @param {number} [retries=10] retries
  * @param {number} [timeout=200] timeout
  * @param {string} [baseUrl='http://localhost:5000'] timeout
+ * @param {function} cb
  */
-function blockchainReady(cb, retries, timeout, baseUrl, doNotLogRetries) {
+function blockchainReady(retries, timeout, baseUrl, doNotLogRetries, cb) {
 	if (!retries) {
 		retries = 10;
 	}
@@ -50,8 +52,8 @@ function blockchainReady(cb, retries, timeout, baseUrl, doNotLogRetries) {
 						__testContext.debug(
 							`Retrying ${totalRetries -
 								retries} time loading blockchain in next ${timeout /
-									1000.0} seconds...`
-								);
+								1000.0} seconds...`
+						);
 					}
 					return setTimeout(() => {
 						fetchBlockchainStatus();
@@ -80,8 +82,10 @@ function blockchainReady(cb, retries, timeout, baseUrl, doNotLogRetries) {
 	})();
 }
 
-function nodeStatus(cb, baseUrl) {
-	var request = popsicle.get(`${baseUrl || __testContext.baseUrl}/api/node/status`);
+function nodeStatus(baseUrl, cb) {
+	const request = popsicle.get(
+		`${baseUrl || __testContext.baseUrl}/api/node/status`
+	);
 
 	request.use(popsicle.plugins.parse(['json']));
 
@@ -100,55 +104,56 @@ function nodeStatus(cb, baseUrl) {
 	});
 }
 // Returns current block height
-function getHeight(cb, baseUrl) {
-	nodeStatus((err, res) => {
+function getHeight(baseUrl, cb) {
+	nodeStatus(baseUrl, (err, res) => {
 		if (err) {
 			return setImmediate(cb, err);
 		}
 		return setImmediate(cb, null, res.height);
-	}, baseUrl);
+	});
 }
 
 // Run callback on new round
-function newRound(cb, baseUrl) {
-	getHeight((err, height) => {
+function newRound(baseUrl, cb) {
+	getHeight(baseUrl, (err, height) => {
 		if (err) {
 			return cb(err);
 		}
-		var nextRound = slots.calcRound(height);
-		var blocksToWait = nextRound * slots.delegates - height;
+		const nextRound = slots.calcRound(height);
+		const blocksToWait = nextRound * ACTIVE_DELEGATES - height;
 		__testContext.debug('blocks to wait: '.grey, blocksToWait);
-		newBlock(height, blocksToWait, cb);
-	}, baseUrl);
+		return newBlock(height, blocksToWait, null, cb);
+	});
 }
-
 // Waits for (n) blocks to be created
-function blocks(blocksToWait, cb, baseUrl) {
-	getHeight((err, height) => {
+function blocks(blocksToWait, baseUrl, cb) {
+	getHeight(baseUrl, (err, height) => {
 		if (err) {
 			return cb(err);
 		}
-		newBlock(height, blocksToWait, cb, baseUrl);
-	}, baseUrl);
+		return newBlock(height, blocksToWait, baseUrl, cb);
+	});
 }
 
-function newBlock(height, blocksToWait, cb, baseUrl) {
+function newBlock(height, blocksToWait, baseUrl, cb) {
 	if (blocksToWait === 0) {
 		return setImmediate(cb, null, height);
 	}
 
-	var counter = 1;
-	var target = height + blocksToWait;
+	let counter = 1;
+	const target = height + blocksToWait;
 
-	async.doWhilst(
-		cb => {
-			var request = popsicle.get(`${baseUrl || __testContext.baseUrl}/api/node/status`);
+	return async.doWhilst(
+		doWhilstCb => {
+			const request = popsicle.get(
+				`${baseUrl || __testContext.baseUrl}/api/node/status`
+			);
 
 			request.use(popsicle.plugins.parse(['json']));
 
 			request.then(res => {
 				if (res.status !== 200) {
-					return cb(
+					return doWhilstCb(
 						['Received bad response code', res.status, res.url].join(' ')
 					);
 				}
@@ -162,11 +167,11 @@ function newBlock(height, blocksToWait, cb, baseUrl) {
 					counter++
 				);
 				height = res.body.data.height;
-				setTimeout(cb, 1000);
+				return setTimeout(doWhilstCb, 1000);
 			});
 
 			request.catch(err => {
-				return cb(err);
+				return doWhilstCb(err);
 			});
 		},
 		() => {
@@ -184,9 +189,9 @@ function newBlock(height, blocksToWait, cb, baseUrl) {
 function confirmations(transactions, limitHeight) {
 	limitHeight = limitHeight || 15;
 
-	function checkConfirmations(transactions) {
+	function checkConfirmations(transactionsToCheck) {
 		return Promise.all(
-			transactions.map(transactionId => {
+			transactionsToCheck.map(transactionId => {
 				return apiHelpers.getTransactionByIdPromise(transactionId);
 			})
 		).then(res => {
@@ -199,12 +204,12 @@ function confirmations(transactions, limitHeight) {
 	}
 
 	function waitUntilLimit(limit) {
-		if (limit == 0) {
+		if (limit === 0) {
 			throw new Error('Exceeded limit to wait for confirmations');
 		}
 		limit -= 1;
 
-		return blocksPromise(1)
+		return blocksPromise(1, null)
 			.then(() => {
 				return checkConfirmations(transactions);
 			})
@@ -217,7 +222,7 @@ function confirmations(transactions, limitHeight) {
 	return waitUntilLimit(limitHeight);
 }
 
-var blocksPromise = Promise.promisify(blocks);
+const blocksPromise = Promise.promisify(blocks);
 
 module.exports = {
 	blockchainReady,

@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-pending-tests */
 /*
  * Copyright © 2018 Lisk Foundation
  *
@@ -609,23 +608,23 @@ describe('blocks/verify', () => {
 	describe('__private.verifyReward', () => {
 		let verifyReward;
 		let blockRewardTemp;
-		let exceptions;
 		let exceptionsTemp;
+		let exceptionsTemp2;
 
 		beforeEach(done => {
 			blockRewardTemp = __private.blockReward;
 			__private.blockReward = {
 				calcReward: sinonSandbox.stub(),
 			};
-			exceptions = BlocksVerify.__get__('exceptions');
-			exceptionsTemp = exceptions;
-			exceptions.blockRewards = [1, 2, 3, 4];
+			exceptionsTemp2 = BlocksVerify.__get__('exceptions');
+			exceptionsTemp = exceptionsTemp2;
+			exceptionsTemp2.blockRewards = [1, 2, 3, 4];
 			done();
 		});
 
 		afterEach(done => {
 			__private.blockReward = blockRewardTemp;
-			exceptions = exceptionsTemp;
+			exceptionsTemp2 = exceptionsTemp;
 			done();
 		});
 
@@ -1229,8 +1228,14 @@ describe('blocks/verify', () => {
 			});
 
 			afterEach(() => {
-				expect(__private.lastNBlockIds).to.deep.equal([2, 3, 4, 5, 6, 7]);
-				return expect();
+				return expect(__private.lastNBlockIds).to.deep.equal([
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+				]);
 			});
 
 			it('should add new id to the end of lastNBlockIds array and delete first one', () => {
@@ -1245,8 +1250,7 @@ describe('blocks/verify', () => {
 			});
 
 			afterEach(() => {
-				expect(__private.lastNBlockIds).to.deep.equal([1, 2, 3, 4, 5]);
-				return expect();
+				return expect(__private.lastNBlockIds).to.deep.equal([1, 2, 3, 4, 5]);
 			});
 
 			it('should add new id to the end of lastNBlockIds array', () => {
@@ -2032,9 +2036,6 @@ describe('blocks/verify', () => {
 				.stub()
 				.callsArgWith(1, null, true);
 			__private.verifyBlock = sinonSandbox.stub().callsArgWith(1, null, true);
-			__private.broadcastBlock = sinonSandbox
-				.stub()
-				.callsArgWith(2, null, true);
 			__private.checkExists = sinonSandbox.stub().callsArgWith(1, null, true);
 			__private.validateBlockSlot = sinonSandbox
 				.stub()
@@ -2043,6 +2044,9 @@ describe('blocks/verify', () => {
 				.stub()
 				.callsArgWith(2, null, true);
 			modules.blocks.chain.applyBlock.callsArgWith(2, null, true);
+			__private.broadcastBlock = sinonSandbox
+				.stub()
+				.callsArgWith(2, null, true);
 			modules.system.update.callsArgWith(0, null, true);
 			modules.transport.broadcastHeaders.callsArgWith(0, null, true);
 			done();
@@ -2085,7 +2089,7 @@ describe('blocks/verify', () => {
 			});
 
 			it('should not be called if snapshotting was activated', done => {
-				const blocksVerifyModule = new BlocksVerify(
+				const blocksVerifyAuxModule = new BlocksVerify(
 					loggerStub,
 					logicBlockStub,
 					logicTransactionStub,
@@ -2095,7 +2099,7 @@ describe('blocks/verify', () => {
 					}
 				);
 
-				blocksVerifyModule.processBlock(
+				blocksVerifyAuxModule.processBlock(
 					dummyBlock,
 					broadcast,
 					saveBlock,
@@ -2177,6 +2181,36 @@ describe('blocks/verify', () => {
 							expect(err).to.be.null;
 							expect(modules.transport.broadcastHeaders.calledOnce).to.be.false;
 							expect(__private.checkExists).to.not.called;
+							done();
+						}
+					);
+				});
+			});
+
+			describe('when broadcast = true and saveBlock = true', () => {
+				it('should call all functions in the correct order', done => {
+					broadcast = true;
+					saveBlock = true;
+					blocksVerifyModule.processBlock(
+						dummyBlock,
+						broadcast,
+						saveBlock,
+						err => {
+							expect(err).to.be.null;
+
+							sinonSandbox.assert.callOrder(
+								__private.addBlockProperties,
+								__private.normalizeBlock,
+								__private.verifyBlock,
+								__private.broadcastBlock,
+								__private.checkExists,
+								__private.validateBlockSlot,
+								__private.checkTransactions,
+								modules.blocks.chain.applyBlock,
+								modules.system.update,
+								modules.transport.broadcastHeaders
+							);
+
 							done();
 						}
 					);

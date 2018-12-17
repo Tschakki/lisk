@@ -14,11 +14,10 @@
 
 'use strict';
 
-var Bignum = require('./bignum');
-var slots = require('./slots');
+const Bignum = require('./bignum');
 
-var exceptions = global.exceptions;
-
+const exceptions = global.exceptions;
+const { ACTIVE_DELEGATES } = global.constants;
 /**
  * Sets round fees and rewards.
  *
@@ -40,15 +39,15 @@ function RoundChanges(scope) {
 		// Apply rewards factor
 		this.roundRewards.forEach((reward, index) => {
 			this.roundRewards[index] = new Bignum(reward.toPrecision(15))
-				.times(exceptions.rounds[scope.round].rewards_factor)
-				.floor();
+				.multipliedBy(exceptions.rounds[scope.round].rewards_factor)
+				.integerValue(Bignum.ROUND_FLOOR);
 		});
 
 		// Apply fees factor and bonus
 		this.roundFees = new Bignum(this.roundFees.toPrecision(15))
-			.times(exceptions.rounds[scope.round].fees_factor)
+			.multipliedBy(exceptions.rounds[scope.round].fees_factor)
 			.plus(exceptions.rounds[scope.round].fees_bonus)
-			.floor();
+			.integerValue(Bignum.ROUND_FLOOR);
 	}
 }
 
@@ -62,20 +61,22 @@ function RoundChanges(scope) {
  * @todo Add description for the params
  */
 RoundChanges.prototype.at = function(index) {
-	var fees = new Bignum(this.roundFees.toPrecision(15))
-		.dividedBy(slots.delegates)
-		.floor();
-	var feesRemaining = new Bignum(this.roundFees.toPrecision(15)).minus(
-		fees.times(slots.delegates)
+	const fees = new Bignum(this.roundFees.toPrecision(15))
+		.dividedBy(ACTIVE_DELEGATES)
+		.integerValue(Bignum.ROUND_FLOOR);
+	const feesRemaining = new Bignum(this.roundFees.toPrecision(15)).minus(
+		fees.multipliedBy(ACTIVE_DELEGATES)
 	);
-	var rewards =
-		new Bignum(this.roundRewards[index].toPrecision(15)).floor() || 0;
+	const rewards =
+		new Bignum(this.roundRewards[index].toPrecision(15)).integerValue(
+			Bignum.ROUND_FLOOR
+		) || 0;
 
 	return {
 		fees: Number(fees.toFixed()),
 		feesRemaining: Number(feesRemaining.toFixed()),
 		rewards: Number(rewards.toFixed()),
-		balance: Number(fees.add(rewards).toFixed()),
+		balance: Number(fees.plus(rewards).toFixed()),
 	};
 };
 

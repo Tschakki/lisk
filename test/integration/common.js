@@ -14,14 +14,16 @@
 
 'use strict';
 
-var async = require('async');
-var Promise = require('bluebird');
-var lisk = require('lisk-elements').default;
-var slots = require('../../helpers/slots');
-var application = require('../common/application');
-var randomUtil = require('../common/utils/random');
-var accountFixtures = require('../fixtures/accounts');
-var Bignum = require('../../helpers/bignum.js');
+const async = require('async');
+const Promise = require('bluebird');
+const lisk = require('lisk-elements').default;
+const slots = require('../../helpers/slots');
+const application = require('../common/application');
+const randomUtil = require('../common/utils/random');
+const accountFixtures = require('../fixtures/accounts');
+const Bignum = require('../../helpers/bignum.js');
+
+const { ACTIVE_DELEGATES } = global.constants;
 
 const convertToBigNum = transactions => {
 	return transactions.forEach(transaction => {
@@ -31,18 +33,18 @@ const convertToBigNum = transactions => {
 };
 
 function getDelegateForSlot(library, slot, cb) {
-	var lastBlock = library.modules.blocks.lastBlock.get();
+	const lastBlock = library.modules.blocks.lastBlock.get();
 	const round = slots.calcRound(lastBlock.height + 1);
 
 	library.modules.delegates.generateDelegateList(round, null, (err, list) => {
-		var delegatePublicKey = list[slot % slots.delegates];
+		const delegatePublicKey = list[slot % ACTIVE_DELEGATES];
 		return cb(err, delegatePublicKey);
 	});
 }
 
 function createBlock(library, transactions, timestamp, keypair, previousBlock) {
 	convertToBigNum(transactions);
-	var block = library.logic.block.create({
+	const block = library.logic.block.create({
 		keypair,
 		timestamp,
 		previousBlock,
@@ -55,12 +57,12 @@ function createBlock(library, transactions, timestamp, keypair, previousBlock) {
 }
 
 function createValidBlock(library, transactions, cb) {
-	var lastBlock = library.modules.blocks.lastBlock.get();
-	var slot = slots.getSlotNumber();
-	var keypairs = library.modules.delegates.getForgersKeyPairs();
+	const lastBlock = library.modules.blocks.lastBlock.get();
+	const slot = slots.getSlotNumber();
+	const keypairs = library.modules.delegates.getForgersKeyPairs();
 	convertToBigNum(transactions);
 	getDelegateForSlot(library, slot, (err, delegateKey) => {
-		var block = createBlock(
+		const block = createBlock(
 			library,
 			transactions,
 			slots.getSlotTime(slot),
@@ -89,13 +91,13 @@ function getBlocks(library, cb) {
 function getNextForger(library, offset, cb) {
 	offset = !offset ? 1 : offset;
 
-	var lastBlock = library.modules.blocks.lastBlock.get();
-	var slot = slots.getSlotNumber(lastBlock.timestamp);
+	const lastBlock = library.modules.blocks.lastBlock.get();
+	const slot = slots.getSlotNumber(lastBlock.timestamp);
 	getDelegateForSlot(library, slot + offset, cb);
 }
 
 function forge(library, cb) {
-	var keypairs = library.modules.delegates.getForgersKeyPairs();
+	const keypairs = library.modules.delegates.getForgersKeyPairs();
 
 	async.waterfall(
 		[
@@ -106,9 +108,9 @@ function forge(library, cb) {
 				getNextForger(library, null, seriesCb);
 			},
 			function(delegate, seriesCb) {
-				var last_block = library.modules.blocks.lastBlock.get();
-				var slot = slots.getSlotNumber(last_block.timestamp) + 1;
-				var keypair = keypairs[delegate];
+				let last_block = library.modules.blocks.lastBlock.get();
+				const slot = slots.getSlotNumber(last_block.timestamp) + 1;
+				const keypair = keypairs[delegate];
 				__testContext.debug(
 					`		Last block height: ${last_block.height} Last block ID: ${
 						last_block.id
@@ -147,7 +149,7 @@ function deleteLastBlock(library, cb) {
 }
 
 function fillPool(library, cb) {
-	var transactionPool = library.rewiredModules.transactions.__get__(
+	const transactionPool = library.rewiredModules.transactions.__get__(
 		'__private.transactionPool'
 	);
 	transactionPool.fillPool(cb);
@@ -185,10 +187,10 @@ function addTransactionToUnconfirmedQueue(library, transaction, cb) {
 			if (err) {
 				return setImmediate(cb, err.toString());
 			}
-			var transactionPool = library.rewiredModules.transactions.__get__(
+			const transactionPool = library.rewiredModules.transactions.__get__(
 				'__private.transactionPool'
 			);
-			transactionPool.fillPool(cb);
+			return transactionPool.fillPool(cb);
 		}
 	);
 }
@@ -279,7 +281,7 @@ function beforeBlock(type, cb) {
 				{ sandbox: { name: `lisk_test_${type}` } },
 				(err, library) => {
 					cb(library);
-					done();
+					return done();
 				}
 			);
 		}
@@ -292,11 +294,11 @@ function beforeBlock(type, cb) {
 }
 
 function loadTransactionType(key, account, dapp, secondPassphrase, cb) {
-	var transaction;
-	var accountCopy = _.cloneDeep(account);
-	if (secondPassphrase == true) {
+	let transaction;
+	const accountCopy = _.cloneDeep(account);
+	if (secondPassphrase === true) {
 		accountCopy.secondPassphrase = null;
-	} else if (secondPassphrase == false) {
+	} else if (secondPassphrase === false) {
 		accountCopy.secondPassphrase = 'invalid_second_passphrase';
 	}
 	switch (key) {
@@ -350,6 +352,13 @@ function loadTransactionType(key, account, dapp, secondPassphrase, cb) {
 	cb(transaction);
 }
 
+function transactionInPool(library, transactionId) {
+	const transactionPool = library.rewiredModules.transactions.__get__(
+		'__private.transactionPool'
+	);
+	return transactionPool.transactionInPool(transactionId);
+}
+
 module.exports = {
 	getNextForger,
 	forge,
@@ -366,4 +375,5 @@ module.exports = {
 	beforeBlock,
 	loadTransactionType,
 	getMultisignatureTransactions,
+	transactionInPool,
 };

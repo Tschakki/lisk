@@ -614,7 +614,6 @@ paths:
       produces:
         - application/json
       parameters:
-        - $ref: '#/parameters/offset'
         - name: limit
           in: query
           description: Limit applied to results
@@ -622,7 +621,15 @@ paths:
           format: int32
           minimum: 1
           maximum: 101
-          default: 10
+          default: 10         
+        - name: offset
+          in: query
+          description: Offset value for results
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          default: 0
       responses:
         200:
           description: Search results matching criteria
@@ -696,6 +703,8 @@ paths:
       parameters:
         - $ref: '#/parameters/blockId'
         - $ref: '#/parameters/height'
+        - $ref: '#/parameters/fromTimestamp'
+        - $ref: '#/parameters/toTimestamp'
         - $ref: '#/parameters/limit'
         - $ref: '#/parameters/offset'
         - in: query
@@ -935,6 +944,13 @@ paths:
             - timestamp:asc
             - timestamp:desc
           default: amount:asc
+        - name: data
+          in: query
+          description: Fuzzy additional data field to query
+          type: string
+          format: additionalData
+          minLength: 1
+          maxLength: 64  # Its an additional check, actual check is 64 bytes
       responses:
         200:
           description: Transactions list
@@ -1178,6 +1194,14 @@ parameters:
     description: Ending unix timestamp
     type: integer
     minimum: 1
+  data:
+    name: data
+    in: query
+    description: Additional data field to query
+    type: string
+    format: additionalData
+    minLength: 1
+    maxLength: 64
 
 definitions:
   Meta:

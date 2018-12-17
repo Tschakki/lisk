@@ -14,29 +14,28 @@
 
 'use strict';
 
-var crypto = require('crypto');
-var rewire = require('rewire');
-var accounts = require('../../fixtures/accounts');
-var ed = require('../../../helpers/ed');
-var Bignum = require('../../../helpers/bignum.js');
-var modulesLoader = require('../../common/modules_loader');
-var random = require('../../common/utils/random');
-var SchemaDynamicTest = require('../common/schema_dynamic_test.js');
+const crypto = require('crypto');
+const rewire = require('rewire');
+const accounts = require('../../fixtures/accounts');
+const ed = require('../../../helpers/ed');
+const Bignum = require('../../../helpers/bignum.js');
+const modulesLoader = require('../../common/modules_loader');
+const random = require('../../common/utils/random');
+const SchemaDynamicTest = require('../common/schema_dynamic_test.js');
 
-var Delegate = rewire('../../../logic/delegate.js');
+const Delegate = rewire('../../../logic/delegate.js');
 
 const { FEES } = global.constants;
-const exceptions = global.exceptions;
-var validPassphrase =
+const validPassphrase =
 	'robust weapon course unknown head trial pencil latin acid';
-var validKeypair = ed.makeKeypair(
+const validKeypair = ed.makeKeypair(
 	crypto
 		.createHash('sha256')
 		.update(validPassphrase, 'utf8')
 		.digest()
 );
 
-var validSender = {
+const validSender = {
 	passphrase:
 		'actress route auction pudding shiver crater forum liquid blouse imitate seven front',
 	address: '10881167371402274308L',
@@ -48,7 +47,7 @@ var validSender = {
 	nameexist: 1,
 };
 
-var validTransaction = {
+const validTransaction = {
 	type: 2,
 	amount: new Bignum('0'),
 	fee: new Bignum('0'),
@@ -69,7 +68,7 @@ var validTransaction = {
 	id: '8500285156990763245',
 };
 
-var rawValidTransaction = {
+const rawValidTransaction = {
 	t_id: '8500285156990763245',
 	b_height: 1,
 	t_blockId: '6524861224470851795',
@@ -91,14 +90,14 @@ var rawValidTransaction = {
 };
 
 describe('delegate', () => {
-	var accountsMock;
-	var delegate;
-	var loggerMock;
+	let accountsMock;
+	let delegate;
+	let loggerMock;
 
-	var dummyBlock;
-	var transaction;
-	var rawTransaction;
-	var sender;
+	let dummyBlock;
+	let transaction;
+	let rawTransaction;
+	let sender;
 
 	beforeEach(() => {
 		transaction = _.cloneDeep(validTransaction);
@@ -123,14 +122,14 @@ describe('delegate', () => {
 
 	describe('constructor', () => {
 		it('should attach schema to library variable', () => {
-			var library = Delegate.__get__('library');
+			const library = Delegate.__get__('library');
 			return expect(library)
 				.to.have.property('schema')
 				.equal(modulesLoader.scope.schema);
 		});
 
 		it('should attach logger to library variable', () => {
-			var library = Delegate.__get__('library');
+			const library = Delegate.__get__('library');
 			return expect(library)
 				.to.have.property('logger')
 				.equal(loggerMock);
@@ -140,7 +139,7 @@ describe('delegate', () => {
 	describe('bind', () => {
 		it('should attach empty object to private modules.accounts variable', () => {
 			delegate.bind({});
-			var modules = Delegate.__get__('modules');
+			const modules = Delegate.__get__('modules');
 
 			return expect(modules).to.eql({
 				accounts: {},
@@ -149,7 +148,7 @@ describe('delegate', () => {
 
 		it('should bind modules with accounts object', () => {
 			delegate.bind(accountsMock);
-			var modules = Delegate.__get__('modules');
+			const modules = Delegate.__get__('modules');
 
 			return expect(modules).to.eql({
 				accounts: accountsMock,
@@ -159,7 +158,8 @@ describe('delegate', () => {
 
 	describe('calculateFee', () => {
 		it('should return the correct fee for delegate transaction', () => {
-			return expect(delegate.calculateFee(transaction).equals(FEES.DELEGATE));
+			return expect(delegate.calculateFee(transaction).isEqualTo(FEES.DELEGATE))
+				.to.be.true;
 		});
 	});
 
@@ -275,7 +275,7 @@ describe('delegate', () => {
 		});
 
 		describe('when transaction is valid', () => {
-			var checkConfirmedStub;
+			let checkConfirmedStub;
 
 			beforeEach(done => {
 				checkConfirmedStub = sinonSandbox
@@ -508,7 +508,7 @@ describe('delegate', () => {
 		});
 
 		it('should return bytes for signature asset', () => {
-			var delegateBytes = delegate.getBytes(transaction);
+			const delegateBytes = delegate.getBytes(transaction);
 			return expect(delegateBytes.toString()).to.equal(
 				transaction.asset.delegate.username
 			);
@@ -516,10 +516,10 @@ describe('delegate', () => {
 	});
 
 	describe('checkDuplicates', () => {
-		var error;
-		var result;
-		var validUsernameField;
-		var validIsDelegateField;
+		let error;
+		let result;
+		let validUsernameField;
+		let validIsDelegateField;
 
 		beforeEach(done => {
 			validUsernameField = 'u_username';
@@ -624,22 +624,16 @@ describe('delegate', () => {
 	});
 
 	describe('checkConfirmed', () => {
-		var checkDuplicatesStub;
-		var transactionsExceptionsIndexOfStub;
+		let checkDuplicatesStub;
 
 		beforeEach(done => {
 			checkDuplicatesStub = sinonSandbox
 				.stub(delegate, 'checkDuplicates')
 				.callsArg(3);
-			transactionsExceptionsIndexOfStub = sinonSandbox.spy(
-				exceptions.delegates,
-				'indexOf'
-			);
 			done();
 		});
 
 		afterEach(() => {
-			transactionsExceptionsIndexOfStub.restore();
 			return checkDuplicatesStub.restore();
 		});
 
@@ -652,14 +646,14 @@ describe('delegate', () => {
 
 		it('should call checkDuplicates with "username"', done => {
 			delegate.checkConfirmed(validTransaction, () => {
-				expect(checkDuplicatesStub.args[0][1] === 'username').to.be.true;
+				expect(checkDuplicatesStub.args[0][1]).to.equal('username');
 				done();
 			});
 		});
 
 		it('should call checkDuplicates with "isDelegate"', done => {
 			delegate.checkConfirmed(validTransaction, () => {
-				expect(checkDuplicatesStub.args[0][2] === 'isDelegate').to.be.true;
+				expect(checkDuplicatesStub.args[0][2]).to.equal('isDelegate');
 				done();
 			});
 		});
@@ -679,7 +673,7 @@ describe('delegate', () => {
 		});
 
 		describe('when checkDuplicates fails', () => {
-			var validDelegateRegistrationError = 'Account is already a delegate';
+			const validDelegateRegistrationError = 'Account is already a delegate';
 
 			beforeEach(done => {
 				checkDuplicatesStub.restore();
@@ -695,57 +689,11 @@ describe('delegate', () => {
 					done();
 				});
 			});
-
-			it('should check if transaction exception occurred', done => {
-				delegate.checkConfirmed(validTransaction, () => {
-					expect(transactionsExceptionsIndexOfStub.called).to.be.true;
-					done();
-				});
-			});
-
-			describe('when transaction is on exceptions list', () => {
-				var originalDelegatesExceptions;
-
-				beforeEach(done => {
-					originalDelegatesExceptions = exceptions.delegates.slice(0); // copy
-					exceptions.delegates = [validTransaction.id];
-					done();
-				});
-
-				afterEach(done => {
-					exceptions.delegates = originalDelegatesExceptions;
-					done();
-				});
-
-				it('should call callback with an error = null', done => {
-					delegate.checkConfirmed(validTransaction, err => {
-						expect(err).to.be.null;
-						done();
-					});
-				});
-
-				it('should call library.logger.debug with an error message', done => {
-					delegate.checkConfirmed(validTransaction, () => {
-						expect(loggerMock.debug.calledWith(validDelegateRegistrationError))
-							.to.be.true;
-						done();
-					});
-				});
-
-				it('should call library.logger.debug with stringified transaction', done => {
-					delegate.checkConfirmed(validTransaction, () => {
-						expect(
-							loggerMock.debug.calledWith(JSON.stringify(validTransaction))
-						).to.be.true;
-						done();
-					});
-				});
-			});
 		});
 	});
 
 	describe('checkUnconfirmed', () => {
-		var checkDuplicatesStub;
+		let checkDuplicatesStub;
 
 		beforeEach(done => {
 			checkDuplicatesStub = sinonSandbox
@@ -767,14 +715,14 @@ describe('delegate', () => {
 
 		it('should call checkDuplicates with "u_username"', done => {
 			delegate.checkUnconfirmed(validTransaction, () => {
-				expect(checkDuplicatesStub.args[0][1] === 'u_username').to.be.true;
+				expect(checkDuplicatesStub.args[0][1]).to.equal('u_username');
 				done();
 			});
 		});
 
 		it('should call checkDuplicates with "u_isDelegate"', done => {
 			delegate.checkUnconfirmed(validTransaction, () => {
-				expect(checkDuplicatesStub.args[0][2] === 'u_isDelegate').to.be.true;
+				expect(checkDuplicatesStub.args[0][2]).to.equal('u_isDelegate');
 				done();
 			});
 		});
@@ -794,7 +742,7 @@ describe('delegate', () => {
 		});
 
 		describe('when delegate is already unconfirmed', () => {
-			var validDelegateRegistrationError = 'Account is already a delegate';
+			const validDelegateRegistrationError = 'Account is already a delegate';
 
 			beforeEach(done => {
 				checkDuplicatesStub.restore();
@@ -814,10 +762,10 @@ describe('delegate', () => {
 	});
 
 	describe('applyConfirmed', () => {
-		var checkConfirmedStub;
+		let checkConfirmedStub;
 
 		describe('when username was not registered before', () => {
-			var validConfirmedAccount;
+			let validConfirmedAccount;
 
 			beforeEach(done => {
 				checkConfirmedStub = sinonSandbox
@@ -892,10 +840,10 @@ describe('delegate', () => {
 	});
 
 	describe('applyUnconfirmed', () => {
-		var checkUnconfirmedStub;
+		let checkUnconfirmedStub;
 
 		describe('when username was not registered before', () => {
-			var validUnconfirmedAccount;
+			let validUnconfirmedAccount;
 
 			beforeEach(done => {
 				checkUnconfirmedStub = sinonSandbox
@@ -959,13 +907,11 @@ describe('delegate', () => {
 				expect(
 					accountsMock.setAccountAndGet.calledWith({
 						address: sender.address,
-						u_isDelegate: 1,
 						isDelegate: 0,
 						vote: 0,
 						username: null,
-						u_username: transaction.asset.delegate.username,
 					})
-				);
+				).to.be.true;
 				done();
 			});
 		});
@@ -978,13 +924,11 @@ describe('delegate', () => {
 				expect(
 					accountsMock.setAccountAndGet.calledWith({
 						address: sender.address,
-						u_isDelegate: 1,
 						isDelegate: 0,
 						vote: 0,
 						username: null,
-						u_username: transaction.asset.delegate.username,
 					})
-				);
+				).to.be.true;
 				done();
 			});
 		});
@@ -997,11 +941,9 @@ describe('delegate', () => {
 					accountsMock.setAccountAndGet.calledWith({
 						address: sender.address,
 						u_isDelegate: 0,
-						isDelegate: 0,
-						username: null,
 						u_username: null,
 					})
-				);
+				).to.be.true;
 				done();
 			});
 		});
@@ -1009,8 +951,8 @@ describe('delegate', () => {
 
 	describe('objectNormalize', () => {
 		it('should use the correct format to validate against', () => {
-			var library = Delegate.__get__('library');
-			var schemaSpy = sinonSandbox.spy(library.schema, 'validate');
+			const library = Delegate.__get__('library');
+			const schemaSpy = sinonSandbox.spy(library.schema, 'validate');
 			delegate.objectNormalize(transaction);
 			expect(schemaSpy.calledOnce).to.equal(true);
 			expect(
@@ -1023,7 +965,7 @@ describe('delegate', () => {
 		});
 
 		describe('when library.schema.validate fails', () => {
-			var schemaDynamicTest = new SchemaDynamicTest({
+			const schemaDynamicTest = new SchemaDynamicTest({
 				testStyle: SchemaDynamicTest.TEST_STYLE.THROWABLE,
 				customPropertyAssertion(input, expectedType, property, err) {
 					expect(err).to.equal(
@@ -1081,7 +1023,7 @@ describe('delegate', () => {
 		});
 
 		it('should return delegate asset for raw transaction passed', () => {
-			var expectedAsset = {
+			const expectedAsset = {
 				address: rawValidTransaction.t_senderId,
 				publicKey: rawValidTransaction.t_senderPublicKey,
 				username: rawValidTransaction.d_username,

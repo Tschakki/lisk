@@ -81,7 +81,7 @@ Signature.prototype.verify = function(transaction, sender, cb) {
 	}
 
 	const amount = new Bignum(transaction.amount);
-	if (amount.greaterThan(0)) {
+	if (amount.isGreaterThan(0)) {
 		return setImmediate(cb, 'Invalid transaction amount');
 	}
 
@@ -210,7 +210,7 @@ Signature.prototype.applyUnconfirmed = function(transaction, sender, cb, tx) {
 		return setImmediate(cb, 'Second signature already enabled');
 	}
 
-	modules.accounts.setAccountAndGet(
+	return modules.accounts.setAccountAndGet(
 		{ address: sender.address, u_secondSignature: 1 },
 		cb,
 		tx

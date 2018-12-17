@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-pending-tests, mocha/no-skipped-tests */
 /*
  * Copyright © 2018 Lisk Foundation
  *
@@ -15,24 +14,24 @@
 
 'use strict';
 
-var rewire = require('rewire');
-var apiCodes = require('../../../helpers/api_codes');
+const rewire = require('rewire');
+const apiCodes = require('../../../helpers/api_codes');
 
-var httpApi = rewire('../../../helpers/http_api');
+const httpApi = rewire('../../../helpers/http_api');
 
-var validUrl = 'api/url';
-var validOriginalUrl = 'org/url';
-var validMethod = 'GET';
-var validIp = '127.0.0.1';
-var validNextSpy;
-var validSendObject;
-var validError;
-var validReq;
-var validRes;
-var spyConsoleTrace;
-var resMock;
-var loggerMock;
-var checkIpInListStub;
+const validUrl = 'api/url';
+const validOriginalUrl = 'org/url';
+const validMethod = 'GET';
+const validIp = '127.0.0.1';
+let validNextSpy;
+let validSendObject;
+let validError;
+let validReq;
+let validRes;
+let spyConsoleTrace;
+let resMock;
+let loggerMock;
+let checkIpInListStub;
 
 describe('httpApi', () => {
 	before(done => {
@@ -169,8 +168,9 @@ describe('httpApi', () => {
 				done();
 			});
 
-			it('should call logger.log with string "GET req/url from 127.0.0.1"', done => {
-				expect(loggerMock.log.calledWith('GET req/url from 127.0.0.1'));
+			it('should call logger.log with string "GET api/url from 127.0.0.1"', done => {
+				expect(loggerMock.log.calledWith('GET api/url from 127.0.0.1')).to.be
+					.true;
 				done();
 			});
 
@@ -181,8 +181,8 @@ describe('httpApi', () => {
 		});
 
 		describe('attachResponseHeader', () => {
-			var validHeaderKey;
-			var validHeaderValue;
+			let validHeaderKey;
+			let validHeaderValue;
 
 			before(done => {
 				validHeaderKey = 'key';
@@ -215,7 +215,7 @@ describe('httpApi', () => {
 		});
 
 		describe('applyAPIAccessRules', () => {
-			var validConfig;
+			let validConfig;
 
 			beforeEach(done => {
 				validConfig = {
@@ -243,10 +243,10 @@ describe('httpApi', () => {
 				);
 
 				expect(validNextSpy).to.be.not.called;
-				expect(resMock.status).to.be.calledWith(apiCodes.INTERNAL_SERVER_ERROR);
+				expect(resMock.status.calledWith(apiCodes.FORBIDDEN)).to.be.true;
 				expect(resMock.send).to.be.calledWith({
-					success: false,
-					error: 'API access disabled',
+					message: 'API access disabled',
+					errors: ['API is not enabled in this node.'],
 				});
 				done();
 			});
@@ -308,10 +308,10 @@ describe('httpApi', () => {
 					'192.168.99.101'
 				);
 				expect(validNextSpy).to.be.not.called;
-				expect(resMock.status).to.be.calledWith(apiCodes.FORBIDDEN);
+				expect(resMock.status.calledWith(apiCodes.FORBIDDEN)).to.be.true;
 				expect(resMock.send).to.be.calledWith({
-					success: false,
-					error: 'API access denied',
+					message: 'API access denied',
+					errors: ['API access blocked.'],
 				});
 				done();
 			});

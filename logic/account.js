@@ -23,7 +23,6 @@ const BlockReward = require('./block_reward.js');
 const { ACTIVE_DELEGATES, MULTISIG_CONSTRAINTS } = global.constants;
 
 // Private fields
-let self; // eslint-disable-line no-unused-vars
 let library;
 let modules;
 
@@ -57,7 +56,6 @@ class Account {
 
 		__private.blockReward = new BlockReward();
 
-		self = this;
 		library = {
 			logger,
 		};
@@ -275,7 +273,7 @@ class Account {
 		}
 
 		const computedFieldsMap = {};
-		this.computedFields.map(field => {
+		this.computedFields.forEach(field => {
 			computedFieldsMap[field.name] = field.dependentFields;
 		});
 
@@ -404,8 +402,9 @@ class Account {
 		const totalSupplyBignum = new Bignum(totalSupply);
 		const approvalBignum = votersBalanceBignum
 			.dividedBy(totalSupplyBignum)
-			.times(100)
-			.round(2);
+			.multipliedBy(100)
+			.decimalPlaces(2);
+
 		return !approvalBignum.isNaN() ? approvalBignum.toNumber() : 0;
 	}
 
@@ -422,8 +421,9 @@ class Account {
 		const missedBlocksBignum = new Bignum(missedBlocks || 0);
 		const percent = producedBlocksBignum
 			.dividedBy(producedBlocksBignum.plus(missedBlocksBignum))
-			.times(100)
-			.round(2);
+			.multipliedBy(100)
+			.decimalPlaces(2);
+
 		return !percent.isNaN() ? percent.toNumber() : 0;
 	}
 
@@ -473,7 +473,13 @@ class Account {
 
 		// If merge was called without any diff object
 		if (Object.keys(diff).length === 0) {
-			return self.get({ address }, cb, tx);
+			return self.get(
+				{
+					address,
+				},
+				cb,
+				tx
+			);
 		}
 
 		// Loop through each of updated attribute
@@ -508,25 +514,18 @@ class Account {
 						}
 
 						// If updated value is positive number
-						if (value.greaterThan(0)) {
+						if (value.isGreaterThan(0)) {
 							promises.push(
-								dbTx.accounts.increment(
-									address,
-									updatedField,
-									value.floor().toString()
-								)
+								dbTx.accounts.increment(address, updatedField, value.toString())
 							);
 
 							// If updated value is negative number
-						} else if (value.lessThan(0)) {
+						} else if (value.isLessThan(0)) {
 							promises.push(
 								dbTx.accounts.decrement(
 									address,
 									updatedField,
-									value
-										.abs()
-										.floor()
-										.toString()
+									value.abs().toString()
 								)
 							);
 						}
@@ -600,8 +599,16 @@ class Account {
 			return dbTx.batch(promises);
 		};
 
-		(tx ? job(tx) : self.scope.db.tx('logic:account:merge', job))
-			.then(() => self.get({ address }, cb, tx))
+		return (tx ? job(tx) : self.scope.db.tx('logic:account:merge', job))
+			.then(() =>
+				self.get(
+					{
+						address,
+					},
+					cb,
+					tx
+				)
+			)
 			.catch(err => {
 				library.logger.error(err.stack);
 				return setImmediate(cb, _.isString(err) ? err : 'Account#merge error');

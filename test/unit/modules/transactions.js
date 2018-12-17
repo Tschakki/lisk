@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-pending-tests, mocha/no-skipped-tests */
 /*
  * Copyright © 2018 Lisk Foundation
  *
@@ -15,31 +14,31 @@
 
 'use strict';
 
-var async = require('async');
-var rewire = require('rewire');
-var transactionTypes = require('../../../helpers/transaction_types.js');
-var modulesLoader = require('../../common/modules_loader');
-var AccountLogic = require('../../../logic/account.js');
-var TransactionLogic = require('../../../logic/transaction.js');
-var DelegateModule = require('../../../modules/delegates.js');
-var AccountModule = require('../../../modules/accounts.js');
-var LoaderModule = require('../../../modules/loader.js');
-var VoteLogic = require('../../../logic/vote.js');
-var TransferLogic = require('../../../logic/transfer.js');
-var DelegateLogic = require('../../../logic/delegate.js');
-var SignatureLogic = require('../../../logic/signature.js');
-var MultisignatureLogic = require('../../../logic/multisignature.js');
-var DappLogic = require('../../../logic/dapp.js');
-var InTransferLogic = require('../../../logic/in_transfer.js');
-var OutTransferLogic = require('../../../logic/out_transfer.js');
+const async = require('async');
+const rewire = require('rewire');
+const transactionTypes = require('../../../helpers/transaction_types.js');
+const modulesLoader = require('../../common/modules_loader');
+const AccountLogic = require('../../../logic/account.js');
+const TransactionLogic = require('../../../logic/transaction.js');
+const DelegateModule = require('../../../modules/delegates.js');
+const AccountModule = require('../../../modules/accounts.js');
+const LoaderModule = require('../../../modules/loader.js');
+const VoteLogic = require('../../../logic/vote.js');
+const TransferLogic = require('../../../logic/transfer.js');
+const DelegateLogic = require('../../../logic/delegate.js');
+const SignatureLogic = require('../../../logic/signature.js');
+const MultisignatureLogic = require('../../../logic/multisignature.js');
+const DappLogic = require('../../../logic/dapp.js');
+const InTransferLogic = require('../../../logic/in_transfer.js');
+const OutTransferLogic = require('../../../logic/out_transfer.js');
 
-var TransactionModule = rewire('../../../modules/transactions.js');
+const TransactionModule = rewire('../../../modules/transactions.js');
 
 describe('transactions', () => {
-	var transactionsModule;
-	var cacheModule;
-	var dbStub;
-	var TransactionTypeMap = {};
+	let transactionsModule;
+	let cacheModule;
+	let dbStub;
+	const TransactionTypeMap = {};
 	TransactionTypeMap[transactionTypes.SEND] = 'getTransferByIds';
 	TransactionTypeMap[transactionTypes.SIGNATURE] = 'getSignatureByIds';
 	TransactionTypeMap[transactionTypes.DELEGATE] = 'getDelegateByIds';
@@ -55,35 +54,35 @@ describe('transactions', () => {
 		delegatesModule,
 		accountsModule
 	) {
-		var sendLogic = transactionLogic.attachAssetType(
+		const sendLogic = transactionLogic.attachAssetType(
 			transactionTypes.SEND,
 			new TransferLogic()
 		);
 		sendLogic.bind(accountsModule);
 		expect(sendLogic).to.be.an.instanceof(TransferLogic);
 
-		var voteLogic = transactionLogic.attachAssetType(
+		const voteLogic = transactionLogic.attachAssetType(
 			transactionTypes.VOTE,
 			new VoteLogic(modulesLoader.logger, modulesLoader.scope.schema)
 		);
 		voteLogic.bind(delegatesModule);
 		expect(voteLogic).to.be.an.instanceof(VoteLogic);
 
-		var delegateLogic = transactionLogic.attachAssetType(
+		const delegateLogic = transactionLogic.attachAssetType(
 			transactionTypes.DELEGATE,
 			new DelegateLogic(modulesLoader.scope.schema)
 		);
 		delegateLogic.bind(accountsModule);
 		expect(delegateLogic).to.be.an.instanceof(DelegateLogic);
 
-		var signatureLogic = transactionLogic.attachAssetType(
+		const signatureLogic = transactionLogic.attachAssetType(
 			transactionTypes.SIGNATURE,
 			new SignatureLogic(modulesLoader.logger, modulesLoader.scope.schema)
 		);
 		signatureLogic.bind(accountsModule);
 		expect(signatureLogic).to.be.an.instanceof(SignatureLogic);
 
-		var multiLogic = transactionLogic.attachAssetType(
+		const multiLogic = transactionLogic.attachAssetType(
 			transactionTypes.MULTI,
 			new MultisignatureLogic(
 				modulesLoader.scope.schema,
@@ -96,7 +95,7 @@ describe('transactions', () => {
 		multiLogic.bind(accountsModule);
 		expect(multiLogic).to.be.an.instanceof(MultisignatureLogic);
 
-		var dappLogic = transactionLogic.attachAssetType(
+		const dappLogic = transactionLogic.attachAssetType(
 			transactionTypes.DAPP,
 			new DappLogic(
 				modulesLoader.db,
@@ -107,14 +106,14 @@ describe('transactions', () => {
 		);
 		expect(dappLogic).to.be.an.instanceof(DappLogic);
 
-		var inTransferLogic = transactionLogic.attachAssetType(
+		const inTransferLogic = transactionLogic.attachAssetType(
 			transactionTypes.IN_TRANSFER,
 			new InTransferLogic(modulesLoader.db, modulesLoader.scope.schema)
 		);
 		inTransferLogic.bind(accountsModule, /* sharedApi */ null);
 		expect(inTransferLogic).to.be.an.instanceof(InTransferLogic);
 
-		var outTransfer = transactionLogic.attachAssetType(
+		const outTransfer = transactionLogic.attachAssetType(
 			transactionTypes.OUT_TRANSFER,
 			new OutTransferLogic(
 				modulesLoader.db,
@@ -236,8 +235,8 @@ describe('transactions', () => {
 				modulesLoader.initModule(
 					TransactionModule,
 					{ db: dbStub, logic: { transaction: result.transactionLogic } },
-					(err, __transactionModule) => {
-						expect(err).to.not.exist;
+					(initModuleErr, __transactionModule) => {
+						expect(initModuleErr).to.not.exist;
 
 						transactionsModule = __transactionModule;
 
@@ -293,7 +292,7 @@ describe('transactions', () => {
 				transactionsModule.shared.getTransactions({ id }, done);
 			}
 
-			var transactionsByType = {
+			const transactionsByType = {
 				0: {
 					transaction: {
 						id: '10707276464897629547',
@@ -479,9 +478,10 @@ describe('transactions', () => {
 			};
 
 			it('should get transaction for send transaction id', done => {
-				var transactionId =
+				const transactionId =
 					transactionsByType[transactionTypes.SEND].transactionId;
-				var transaction = transactionsByType[transactionTypes.SEND].transaction;
+				const transaction =
+					transactionsByType[transactionTypes.SEND].transaction;
 
 				dbStub.transactions.countList.onCall(0).resolves(1);
 
@@ -523,9 +523,9 @@ describe('transactions', () => {
 						.to.have.property('transactions')
 						.which.is.an('Array');
 					expect(res.transactions[0].type).to.equal(transaction.type);
-					expect(res.transactions[0].amount.equals(transaction.amount)).to.be
+					expect(res.transactions[0].amount.isEqualTo(transaction.amount)).to.be
 						.true;
-					expect(res.transactions[0].fee.equals(transaction.fee)).to.be.true;
+					expect(res.transactions[0].fee.isEqualTo(transaction.fee)).to.be.true;
 					expect(res.transactions[0].recipientId).to.equal(
 						transaction.recipientId
 					);
@@ -543,9 +543,9 @@ describe('transactions', () => {
 			});
 
 			it('should get transaction with singature asset for transaction id', done => {
-				var transactionId =
+				const transactionId =
 					transactionsByType[transactionTypes.SIGNATURE].transactionId;
-				var transaction =
+				const transaction =
 					transactionsByType[transactionTypes.SIGNATURE].transaction;
 
 				dbStub.transactions.countList.onCall(0).resolves(1);
@@ -588,12 +588,12 @@ describe('transactions', () => {
 						.to.have.property('transactions')
 						.which.is.an('array');
 					expect(res.transactions[0].id).to.equal(transaction.id);
-					expect(res.transactions[0].amount.equals(transaction.amount)).to.be
+					expect(res.transactions[0].amount.isEqualTo(transaction.amount)).to.be
 						.true;
 					expect(res.transactions[0].asset.signature.publicKey).to.equal(
 						transaction.asset.signature.publicKey
 					);
-					expect(res.transactions[0].fee.equals(transaction.fee)).to.be.true;
+					expect(res.transactions[0].fee.isEqualTo(transaction.fee)).to.be.true;
 					expect(res.transactions[0].type).to.equal(transaction.type);
 					expect(res.transactions[0].type).to.equal(transactionTypes.SIGNATURE);
 					done();
@@ -601,9 +601,9 @@ describe('transactions', () => {
 			});
 
 			it('should get transaction with delegate asset for transaction id', done => {
-				var transactionId =
+				const transactionId =
 					transactionsByType[transactionTypes.DELEGATE].transactionId;
-				var transaction =
+				const transaction =
 					transactionsByType[transactionTypes.DELEGATE].transaction;
 
 				dbStub.transactions.countList.onCall(0).resolves(1);
@@ -645,7 +645,7 @@ describe('transactions', () => {
 						.to.have.property('transactions')
 						.which.is.an('array');
 					expect(res.transactions[0].id).to.equal(transaction.id);
-					expect(res.transactions[0].amount.equals(transaction.amount)).to.be
+					expect(res.transactions[0].amount.isEqualTo(transaction.amount)).to.be
 						.true;
 					expect(res.transactions[0].asset.username).to.equal(
 						transaction.asset.username
@@ -656,7 +656,7 @@ describe('transactions', () => {
 					expect(res.transactions[0].asset.address).to.equal(
 						transaction.asset.address
 					);
-					expect(res.transactions[0].fee.equals(transaction.fee)).to.be.true;
+					expect(res.transactions[0].fee.isEqualTo(transaction.fee)).to.be.true;
 					expect(res.transactions[0].type).to.equal(transaction.type);
 					expect(res.transactions[0].type).to.equal(transactionTypes.DELEGATE);
 					done();
@@ -664,9 +664,10 @@ describe('transactions', () => {
 			});
 
 			it('should get transaction with vote asset for transaction id', done => {
-				var transactionId =
+				const transactionId =
 					transactionsByType[transactionTypes.VOTE].transactionId;
-				var transaction = transactionsByType[transactionTypes.VOTE].transaction;
+				const transaction =
+					transactionsByType[transactionTypes.VOTE].transaction;
 
 				dbStub.transactions.countList.onCall(0).resolves(1);
 
@@ -709,12 +710,12 @@ describe('transactions', () => {
 						.to.have.property('transactions')
 						.which.is.an('array');
 					expect(res.transactions[0].id).to.equal(transaction.id);
-					expect(res.transactions[0].amount.equals(transaction.amount)).to.be
+					expect(res.transactions[0].amount.isEqualTo(transaction.amount)).to.be
 						.true;
 					expect(res.transactions[0].asset.votes).to.eql(
 						transaction.asset.votes
 					);
-					expect(res.transactions[0].fee.equals(transaction.fee)).to.be.true;
+					expect(res.transactions[0].fee.isEqualTo(transaction.fee)).to.be.true;
 					expect(res.transactions[0].type).to.equal(transaction.type);
 					expect(res.transactions[0].type).to.equal(transactionTypes.VOTE);
 					done();
@@ -722,9 +723,9 @@ describe('transactions', () => {
 			});
 
 			it('should get transaction with MULTI asset for transaction id', done => {
-				var transactionId =
+				const transactionId =
 					transactionsByType[transactionTypes.MULTI].transactionId;
-				var transaction =
+				const transaction =
 					transactionsByType[transactionTypes.MULTI].transaction;
 
 				dbStub.transactions.countList.onCall(0).resolves(1);
@@ -770,7 +771,7 @@ describe('transactions', () => {
 						.to.have.property('transactions')
 						.which.is.an('array');
 					expect(res.transactions[0].id).to.equal(transaction.id);
-					expect(res.transactions[0].amount.equals(transaction.amount)).to.be
+					expect(res.transactions[0].amount.isEqualTo(transaction.amount)).to.be
 						.true;
 					expect(res.transactions[0].asset.multisignature.lifetime).to.equal(
 						transaction.asset.multisignature.lifetime
@@ -781,7 +782,7 @@ describe('transactions', () => {
 					expect(res.transactions[0].asset.multisignature.keysgroup).to.eql(
 						transaction.asset.multisignature.keysgroup
 					);
-					expect(res.transactions[0].fee.equals(transaction.fee)).to.be.true;
+					expect(res.transactions[0].fee.isEqualTo(transaction.fee)).to.be.true;
 					expect(res.transactions[0].type).to.equal(transaction.type);
 					expect(res.transactions[0].type).to.equal(transactionTypes.MULTI);
 					done();
@@ -789,9 +790,10 @@ describe('transactions', () => {
 			});
 
 			it('should get transaction with DAPP asset for transaction id', done => {
-				var transactionId =
+				const transactionId =
 					transactionsByType[transactionTypes.DAPP].transactionId;
-				var transaction = transactionsByType[transactionTypes.DAPP].transaction;
+				const transaction =
+					transactionsByType[transactionTypes.DAPP].transaction;
 
 				dbStub.transactions.countList.onCall(0).resolves(1);
 
@@ -839,9 +841,9 @@ describe('transactions', () => {
 						.to.have.property('transactions')
 						.which.is.an('array');
 					expect(res.transactions[0].id).to.equal(transaction.id);
-					expect(res.transactions[0].amount.equals(transaction.amount)).to.be
+					expect(res.transactions[0].amount.isEqualTo(transaction.amount)).to.be
 						.true;
-					expect(res.transactions[0].fee.equals(transaction.fee)).to.be.true;
+					expect(res.transactions[0].fee.isEqualTo(transaction.fee)).to.be.true;
 					expect(res.transactions[0].type).to.equal(transaction.type);
 					expect(res.transactions[0].asset.dapp.name).to.equal(
 						transaction.asset.dapp.name
@@ -860,10 +862,11 @@ describe('transactions', () => {
 				});
 			});
 
+			/* eslint-disable mocha/no-skipped-tests */
 			it.skip('should get transaction with intransfer asset for transaction id', done => {
-				var transactionId =
+				const transactionId =
 					transactionsByType[transactionTypes.IN_TRANSFER].transactionId;
-				var transaction =
+				const transaction =
 					transactionsByType[transactionTypes.IN_TRANSFER].transaction;
 
 				getTransactionsById(transactionId, (err, res) => {
@@ -872,9 +875,9 @@ describe('transactions', () => {
 						.to.have.property('transactions')
 						.which.is.an('array');
 					expect(res.transactions[0].id).to.equal(transaction.id);
-					expect(res.transactions[0].amount.equals(transaction.amount)).to.be
+					expect(res.transactions[0].amount.isEqualTo(transaction.amount)).to.be
 						.true;
-					expect(res.transactions[0].fee.equals(transaction.fee)).to.be.true;
+					expect(res.transactions[0].fee.isEqualTo(transaction.fee)).to.be.true;
 					expect(res.transactions[0].type).to.equal(transaction.type);
 					expect(res.transactions[0].asset.inTransfer.dappId).to.equal(
 						transaction.asset.inTransfer.dappId
@@ -885,8 +888,11 @@ describe('transactions', () => {
 					done();
 				});
 			});
+			/* eslint-enable mocha/no-skipped-tests */
 
+			/* eslint-disable mocha/no-pending-tests */
 			it('should get transaction with outtransfer asset for transaction id');
+			/* eslint-enable mocha/no-pending-tests */
 		});
 
 		describe('getTransactionsCount', () => {

@@ -14,21 +14,21 @@
 
 'use strict';
 
-var failureCodes = require('../../../../../api/ws/rpc/failure_codes');
-var PeerUpdateError = require('../../../../../api/ws/rpc/failure_codes')
+const failureCodes = require('../../../../../api/ws/rpc/failure_codes');
+const PeerUpdateError = require('../../../../../api/ws/rpc/failure_codes')
 	.PeerUpdateError;
-var prefixedPeer = require('../../../../fixtures/peers').randomNormalizedPeer;
-var connectionsTable = require('../../../../../api/ws/workers/connections_table');
-var PeersUpdateRules = require('../../../../../api/ws/workers/peers_update_rules');
-var Rules = require('../../../../../api/ws/workers/rules');
+const prefixedPeer = require('../../../../fixtures/peers').randomNormalizedPeer;
+const connectionsTable = require('../../../../../api/ws/workers/connections_table');
+const PeersUpdateRules = require('../../../../../api/ws/workers/peers_update_rules');
+const Rules = require('../../../../../api/ws/workers/rules');
 
 describe('PeersUpdateRules', () => {
-	var slaveWAMPServerMock;
-	var peersUpdateRules;
-	var validConnectionId;
-	var validErrorCode;
-	var validPeer;
-	var actionCb = sinonSandbox.spy();
+	let slaveWAMPServerMock;
+	let peersUpdateRules;
+	let validConnectionId;
+	let validErrorCode;
+	let validPeer;
+	const actionCb = sinonSandbox.spy();
 
 	beforeEach(done => {
 		slaveWAMPServerMock = {
@@ -165,35 +165,43 @@ describe('PeersUpdateRules', () => {
 			});
 		});
 
-		it('should remove added entries from connectionsTable after receiving an error without code from server', done => {
+		it('should NOT remove added entries from connectionsTable after receiving an error without code from server', done => {
 			peersUpdateRules.slaveToMasterSender.send.restore();
 			peersUpdateRules.slaveToMasterSender.send = sinonSandbox
 				.stub(peersUpdateRules.slaveToMasterSender, 'send')
 				.callsArgWith(3, 'On insert error');
 			peersUpdateRules.insert(validPeer, validConnectionId, () => {
-				expect(connectionsTable.nonceToConnectionIdMap).to.be.empty;
-				expect(connectionsTable.connectionIdToNonceMap).to.be.empty;
+				expect(connectionsTable.nonceToConnectionIdMap)
+					.to.have.property(validPeer.nonce)
+					.equal(validConnectionId);
+				expect(connectionsTable.connectionIdToNonceMap)
+					.to.have.property(validConnectionId)
+					.equal(validPeer.nonce);
 				done();
 			});
 		});
 
-		it('should remove added entries from connectionsTable after receiving an error with code from server', done => {
+		it('should NOT remove added entries from connectionsTable after receiving an error with code from server', done => {
 			peersUpdateRules.slaveToMasterSender.send.restore();
 			peersUpdateRules.slaveToMasterSender.send = sinonSandbox
 				.stub(peersUpdateRules.slaveToMasterSender, 'send')
 				.callsArgWith(3, { code: validErrorCode });
 			peersUpdateRules.insert(validPeer, validConnectionId, () => {
-				expect(connectionsTable.nonceToConnectionIdMap).to.be.empty;
-				expect(connectionsTable.connectionIdToNonceMap).to.be.empty;
+				expect(connectionsTable.nonceToConnectionIdMap)
+					.to.have.property(validPeer.nonce)
+					.equal(validConnectionId);
+				expect(connectionsTable.connectionIdToNonceMap)
+					.to.have.property(validConnectionId)
+					.equal(validPeer.nonce);
 				done();
 			});
 		});
 
 		describe('multiple valid entries', () => {
-			var validPeerA;
-			var validPeerB;
-			var validConnectionIdA = `${validConnectionId}A`;
-			var validConnectionIdB = `${validConnectionId}B`;
+			let validPeerA;
+			let validPeerB;
+			const validConnectionIdA = `${validConnectionId}A`;
+			const validConnectionIdB = `${validConnectionId}B`;
 
 			beforeEach(done => {
 				validPeerA = _.clone(validPeer);
@@ -351,7 +359,7 @@ describe('PeersUpdateRules', () => {
 				});
 			});
 
-			it('should revert removed connections tables entries when invoked with valid arguments but received error without code from server', done => {
+			it('should NOT revert removed connections tables entries when invoked with valid arguments but received error without code from server', done => {
 				peersUpdateRules.slaveToMasterSender.send.restore();
 				peersUpdateRules.slaveToMasterSender.send = sinonSandbox
 					.stub(peersUpdateRules.slaveToMasterSender, 'send')
@@ -360,12 +368,8 @@ describe('PeersUpdateRules', () => {
 					expect(err)
 						.to.have.property('code')
 						.equal(failureCodes.ON_MASTER.UPDATE.TRANSPORT);
-					expect(connectionsTable.nonceToConnectionIdMap)
-						.to.have.property(validPeer.nonce)
-						.equal(validConnectionId);
-					expect(connectionsTable.connectionIdToNonceMap)
-						.to.have.property(validConnectionId)
-						.equal(validPeer.nonce);
+					expect(connectionsTable.nonceToConnectionIdMap).to.be.empty;
+					expect(connectionsTable.connectionIdToNonceMap).to.be.empty;
 					done();
 				});
 			});
@@ -385,7 +389,7 @@ describe('PeersUpdateRules', () => {
 	});
 
 	describe('block', () => {
-		var validFailureCode = 4100;
+		const validFailureCode = 4100;
 
 		it('should return the PeerUpdateError when called', done => {
 			peersUpdateRules.block(
@@ -401,9 +405,9 @@ describe('PeersUpdateRules', () => {
 	});
 
 	describe('internal.update', () => {
-		var insertStub;
-		var removeStub;
-		var blockStub;
+		let insertStub;
+		let removeStub;
+		let blockStub;
 
 		before(done => {
 			insertStub = sinonSandbox.stub(PeersUpdateRules.prototype, 'insert');
@@ -704,7 +708,7 @@ describe('PeersUpdateRules', () => {
 	});
 
 	describe('external.update', () => {
-		var minimalValidUpdateRequest;
+		let minimalValidUpdateRequest;
 
 		beforeEach(done => {
 			minimalValidUpdateRequest = {

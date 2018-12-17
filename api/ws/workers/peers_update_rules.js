@@ -14,18 +14,18 @@
 
 'use strict';
 
-var Peer = require('../../../logic/peer');
-var failureCodes = require('../rpc/failure_codes');
-var PeerUpdateError = require('../rpc/failure_codes').PeerUpdateError;
-var swaggerHelper = require('../../../helpers/swagger');
-var connectionsTable = require('./connections_table');
-var SlaveToMasterSender = require('./slave_to_master_sender');
-var Rules = require('./rules');
+const Peer = require('../../../logic/peer');
+const failureCodes = require('../rpc/failure_codes');
+const PeerUpdateError = require('../rpc/failure_codes').PeerUpdateError;
+const swaggerHelper = require('../../../helpers/swagger');
+const connectionsTable = require('./connections_table');
+const SlaveToMasterSender = require('./slave_to_master_sender');
+const Rules = require('./rules');
 
-var definitions = swaggerHelper.getSwaggerSpec().definitions;
-var z_schema = swaggerHelper.getValidator();
+const definitions = swaggerHelper.getSwaggerSpec().definitions;
+const z_schema = swaggerHelper.getValidator();
 
-var self;
+let self;
 
 /**
  * Secures peers updates. Used only by workers.
@@ -61,13 +61,12 @@ PeersUpdateRules.prototype.insert = function(peer, connectionId, cb) {
 	try {
 		connectionsTable.add(peer.nonce, connectionId);
 		peer.state = Peer.STATE.CONNECTED;
-		self.slaveToMasterSender.send(
+		return self.slaveToMasterSender.send(
 			'updatePeer',
 			Rules.UPDATES.INSERT,
 			peer,
 			err => {
 				if (err) {
-					connectionsTable.remove(peer.nonce);
 					if (!err.code) {
 						err = new PeerUpdateError(
 							failureCodes.ON_MASTER.UPDATE.TRANSPORT,
@@ -98,13 +97,12 @@ PeersUpdateRules.prototype.insert = function(peer, connectionId, cb) {
 PeersUpdateRules.prototype.remove = function(peer, connectionId, cb) {
 	try {
 		connectionsTable.remove(peer.nonce);
-		self.slaveToMasterSender.send(
+		return self.slaveToMasterSender.send(
 			'updatePeer',
 			Rules.UPDATES.REMOVE,
 			peer,
 			err => {
 				if (err && !err.code) {
-					connectionsTable.add(peer.nonce, connectionId);
 					err = new PeerUpdateError(
 						failureCodes.ON_MASTER.UPDATE.TRANSPORT,
 						failureCodes.errorMessages[failureCodes.ON_MASTER.UPDATE.TRANSPORT],
@@ -165,14 +163,14 @@ PeersUpdateRules.prototype.internal = {
 					)
 				);
 			}
-			var isNoncePresent = !!connectionsTable.getNonce(connectionId);
-			var isConnectionIdPresent = !!connectionsTable.getConnectionId(
+			const isNoncePresent = !!connectionsTable.getNonce(connectionId);
+			const isConnectionIdPresent = !!connectionsTable.getConnectionId(
 				peer.nonce
 			);
 
-			self.rules.rules[updateType][isNoncePresent][isConnectionIdPresent][
-				onMasterPresence
-			](peer, connectionId, cb);
+			return self.rules.rules[updateType][isNoncePresent][
+				isConnectionIdPresent
+			][onMasterPresence](peer, connectionId, cb);
 		});
 	},
 };
@@ -206,7 +204,7 @@ PeersUpdateRules.prototype.external = {
 					new Error('Connection id does not match with corresponding peer')
 				);
 			}
-			self.slaveToMasterSender.send(
+			return self.slaveToMasterSender.send(
 				'updatePeer',
 				Rules.UPDATES.INSERT,
 				request.data,

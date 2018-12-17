@@ -16,47 +16,50 @@
 
 require('../../functional.js');
 
-var lisk = require('lisk-elements').default;
-var phases = require('../../../common/phases');
-var Scenarios = require('../../../common/scenarios');
-var waitFor = require('../../../common/utils/wait_for');
-var randomUtil = require('../../../common/utils/random');
-var apiHelpers = require('../../../common/helpers/api');
-var errorCodes = require('../../../../helpers/api_codes');
+const lisk = require('lisk-elements').default;
+const phases = require('../../../common/phases');
+const Scenarios = require('../../../common/scenarios');
+const waitFor = require('../../../common/utils/wait_for');
+const randomUtil = require('../../../common/utils/random');
+const apiHelpers = require('../../../common/helpers/api');
+const errorCodes = require('../../../../helpers/api_codes');
 
 const { NORMALIZER } = global.constants;
-var sendTransactionPromise = apiHelpers.sendTransactionPromise;
+const sendTransactionPromise = apiHelpers.sendTransactionPromise;
 
 describe('POST /api/transactions (type 4) register multisignature', () => {
-	var scenarios = {
+	const scenarios = {
 		incorrectly_offline_signed: new Scenarios.Multisig(),
 		offline_signed_empty_signatures: new Scenarios.Multisig(),
 		offline_signed_without_ready: new Scenarios.Multisig(),
-		offline_signed_with_ready_false: new Scenarios.Multisig(),
+		offline_not_signed_with_ready_false: new Scenarios.Multisig(),
 		offline_signed_with_ready_true: new Scenarios.Multisig(),
 		duplicated_signature: new Scenarios.Multisig(),
 		extra_signature: new Scenarios.Multisig(),
 		unknown_signature: new Scenarios.Multisig(),
 		requesterPublicKey: new Scenarios.Multisig(),
+		all_signatures_ready_false: new Scenarios.Multisig(),
+		no_signatures_ready_true: new Scenarios.Multisig(),
+		offline_partly_signed_with_ready_true: new Scenarios.Multisig(),
 	};
 
-	var transactionsToWaitFor = [];
-	var badTransactions = [];
-	var goodTransactions = [];
-	var pendingMultisignatures = [];
+	let transactionsToWaitFor = [];
+	const badTransactions = [];
+	const goodTransactions = [];
+	const pendingMultisignatures = [];
 
 	before(() => {
-		var transactions = [];
+		const transactions = [];
 
-		Object.keys(scenarios).map(type => {
-			if (type !== 'no_funds') {
-				transactions.push(scenarios[type].creditTransaction);
-			}
-		});
+		Object.keys(scenarios)
+			.filter(type => type !== 'no_funds')
+			.map(type => transactions.push(scenarios[type].creditTransaction));
 
 		return apiHelpers.sendTransactionsPromise(transactions).then(responses => {
 			responses.map(res => {
-				expect(res.body.data.message).to.be.equal('Transaction(s) accepted');
+				return expect(res.body.data.message).to.be.equal(
+					'Transaction(s) accepted'
+				);
 			});
 			transactionsToWaitFor = transactionsToWaitFor.concat(
 				_.map(transactions, 'id')
@@ -69,44 +72,8 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 	describe('transactions processing', () => {
 		describe('signatures property', () => {
 			describe('correctly offline signed transaction', () => {
-				it('using ready should be ok but never confirmed', () => {
-					var scenario = scenarios.offline_signed_without_ready;
-
-					scenario.multiSigTransaction.signatures = _.map(
-						scenario.members,
-						member => {
-							var signatureObject = apiHelpers.createSignatureObject(
-								scenario.multiSigTransaction,
-								member
-							);
-							return signatureObject.signature;
-						}
-					);
-
-					return sendTransactionPromise(scenario.multiSigTransaction).then(
-						res => {
-							expect(res.body.data.message).to.be.equal(
-								'Transaction(s) accepted'
-							);
-							badTransactions.push(scenario.multiSigTransaction);
-							pendingMultisignatures.push(scenario.multiSigTransaction);
-						}
-					);
-				});
-
-				it('using ready false should be ok but never confirmed', () => {
-					var scenario = scenarios.offline_signed_with_ready_false;
-
-					scenario.multiSigTransaction.signatures = _.map(
-						scenario.members,
-						member => {
-							var signatureObject = apiHelpers.createSignatureObject(
-								scenario.multiSigTransaction,
-								member
-							);
-							return signatureObject.signature;
-						}
-					);
+				it('Parameter ready set to false, no signatures present, should be ok', () => {
+					const scenario = scenarios.offline_not_signed_with_ready_false;
 
 					scenario.multiSigTransaction.ready = false;
 
@@ -115,19 +82,18 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 							expect(res.body.data.message).to.be.equal(
 								'Transaction(s) accepted'
 							);
-							badTransactions.push(scenario.multiSigTransaction);
 							pendingMultisignatures.push(scenario.multiSigTransaction);
 						}
 					);
 				});
 
-				it('using ready true should be ok', () => {
-					var scenario = scenarios.offline_signed_with_ready_true;
+				it('Parameter ready set to true, all signatures present, should be ok', () => {
+					const scenario = scenarios.offline_signed_with_ready_true;
 
 					scenario.multiSigTransaction.signatures = _.map(
 						scenario.members,
 						member => {
-							var signatureObject = apiHelpers.createSignatureObject(
+							const signatureObject = apiHelpers.createSignatureObject(
 								scenario.multiSigTransaction,
 								member
 							);
@@ -150,7 +116,7 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 
 			describe('incorrectly offline signed transaction', () => {
 				it('using null inside array should fail', () => {
-					var scenario = scenarios.incorrectly_offline_signed;
+					const scenario = scenarios.incorrectly_offline_signed;
 					scenario.multiSigTransaction.signatures = [null];
 
 					return sendTransactionPromise(
@@ -163,7 +129,7 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using undefined inside array should fail', () => {
-					var scenario = scenarios.incorrectly_offline_signed;
+					const scenario = scenarios.incorrectly_offline_signed;
 					scenario.multiSigTransaction.signatures = [undefined];
 
 					return sendTransactionPromise(
@@ -176,7 +142,7 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using integer inside array should fail', () => {
-					var scenario = scenarios.incorrectly_offline_signed;
+					const scenario = scenarios.incorrectly_offline_signed;
 					scenario.multiSigTransaction.signatures = [1];
 
 					return sendTransactionPromise(
@@ -189,7 +155,7 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using empty object inside array should fail', () => {
-					var scenario = scenarios.incorrectly_offline_signed;
+					const scenario = scenarios.incorrectly_offline_signed;
 					scenario.multiSigTransaction.signatures = [{}];
 
 					return sendTransactionPromise(
@@ -202,8 +168,8 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using non empty object inside array should fail', () => {
-					var scenario = scenarios.incorrectly_offline_signed;
-					scenario.multiSigTransaction.signatures = [new Buffer.from('Duppa')];
+					const scenario = scenarios.incorrectly_offline_signed;
+					scenario.multiSigTransaction.signatures = [Buffer.from('Duppa')];
 
 					return sendTransactionPromise(
 						scenario.multiSigTransaction,
@@ -215,7 +181,7 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using empty string inside array should fail', () => {
-					var scenario = scenarios.incorrectly_offline_signed;
+					const scenario = scenarios.incorrectly_offline_signed;
 					scenario.multiSigTransaction.signatures = [''];
 
 					return sendTransactionPromise(
@@ -230,7 +196,7 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using invalid signature inside array should fail', () => {
-					var scenario = scenarios.incorrectly_offline_signed;
+					const scenario = scenarios.incorrectly_offline_signed;
 					scenario.multiSigTransaction.signatures = ['x'];
 
 					return sendTransactionPromise(
@@ -243,7 +209,7 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using empty array should be ok but not confirmed', () => {
-					var scenario = scenarios.offline_signed_empty_signatures;
+					const scenario = scenarios.offline_signed_empty_signatures;
 					scenario.multiSigTransaction.signatures = [];
 
 					return sendTransactionPromise(scenario.multiSigTransaction).then(
@@ -258,14 +224,14 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using unknown signature should fail', () => {
-					var scenario = scenarios.unknown_signature;
+					const scenario = scenarios.unknown_signature;
 
-					var signatureObject = apiHelpers.createSignatureObject(
+					const signatureObject = apiHelpers.createSignatureObject(
 						scenario.multiSigTransaction,
 						scenario.members[0]
 					);
 
-					var signatureFromunknown = apiHelpers.createSignatureObject(
+					const signatureFromunknown = apiHelpers.createSignatureObject(
 						scenario.multiSigTransaction,
 						randomUtil.account()
 					);
@@ -290,9 +256,9 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using duplicate signature should fail', () => {
-					var scenario = scenarios.duplicated_signature;
+					const scenario = scenarios.duplicated_signature;
 
-					var signatureObject = apiHelpers.createSignatureObject(
+					const signatureObject = apiHelpers.createSignatureObject(
 						scenario.multiSigTransaction,
 						scenario.members[0]
 					);
@@ -314,14 +280,14 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 				});
 
 				it('using extra signature should fail', () => {
-					var scenario = scenarios.extra_signature;
+					const scenario = scenarios.extra_signature;
 
-					var signatureObject0 = apiHelpers.createSignatureObject(
+					const signatureObject0 = apiHelpers.createSignatureObject(
 						scenario.multiSigTransaction,
 						randomUtil.account()
 					);
 
-					var signatureObject1 = apiHelpers.createSignatureObject(
+					const signatureObject1 = apiHelpers.createSignatureObject(
 						scenario.multiSigTransaction,
 						scenario.members[1]
 					);
@@ -343,17 +309,80 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 						badTransactions.push(scenario.multiSigTransaction);
 					});
 				});
+
+				it('using all signatures, setting ready to false, should be corrected and processed', () => {
+					const scenario = scenarios.all_signatures_ready_false;
+
+					scenario.multiSigTransaction.signatures = _.map(
+						scenario.members,
+						member => {
+							const signatureObject = apiHelpers.createSignatureObject(
+								scenario.multiSigTransaction,
+								member
+							);
+							return signatureObject.signature;
+						}
+					);
+
+					scenario.multiSigTransaction.ready = false;
+
+					return sendTransactionPromise(scenario.multiSigTransaction).then(
+						res => {
+							expect(res.body.data.message).to.be.equal(
+								'Transaction(s) accepted'
+							);
+							goodTransactions.push(scenario.multiSigTransaction);
+						}
+					);
+				});
+
+				it('using no signatures, setting ready to true, should be corrected and remain pending', () => {
+					const scenario = scenarios.no_signatures_ready_true;
+
+					scenario.multiSigTransaction.ready = true;
+
+					return sendTransactionPromise(scenario.multiSigTransaction).then(
+						res => {
+							expect(res.body.data.message).to.be.equal(
+								'Transaction(s) accepted'
+							);
+							pendingMultisignatures.push(scenario.multiSigTransaction);
+						}
+					);
+				});
+
+				it('using some signatures, setting ready to true, should be corrected and remain pending', () => {
+					const scenario = scenarios.offline_partly_signed_with_ready_true;
+
+					const signatureObj = apiHelpers.createSignatureObject(
+						scenario.multiSigTransaction,
+						scenario.members[0]
+					);
+
+					scenario.multiSigTransaction.signatures = [signatureObj.signature];
+
+					scenario.multiSigTransaction.ready = true;
+
+					return sendTransactionPromise(scenario.multiSigTransaction).then(
+						res => {
+							expect(res.body.data.message).to.be.equal(
+								'Transaction(s) accepted'
+							);
+							pendingMultisignatures.push(scenario.multiSigTransaction);
+						}
+					);
+				});
 			});
 		});
 
 		describe('requesterPublicKey property', () => {
 			it('sending multisig transaction offline signed should be ok and confirmed', () => {
-				var scenario = scenarios.requesterPublicKey;
+				const scenario = scenarios.requesterPublicKey;
 
 				scenario.multiSigTransaction.signatures = _.map(
 					scenario.members,
 					member => {
-						var signatureObject = apiHelpers.createSignatureObject(
+						const signatureObject = apiHelpers.createSignatureObject(
 							scenario.multiSigTransaction,
 							member
 						);
@@ -376,9 +405,9 @@ describe('POST /api/transactions (type 4) register multisignature', () => {
 			});
 
 			it('requesting multisig group transaction from non author account', () => {
-				var scenario = scenarios.requesterPublicKey;
+				const scenario = scenarios.requesterPublicKey;
 
-				var transaction = lisk.transaction.transfer({
+				const transaction = lisk.transaction.transfer({
 					amount: 1 * NORMALIZER,
 					passphrase: scenario.members[0].passphrase,
 					recipientId: randomUtil.account().address,

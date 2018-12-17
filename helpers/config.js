@@ -20,7 +20,7 @@ const program = require('commander');
 const _ = require('lodash');
 const randomstring = require('randomstring');
 const configSchema = require('../schema/config.js');
-const z_schema = require('./z_schema.js');
+const Z_schema = require('./z_schema.js');
 const deepFreeze = require('./deep_freeze_object.js');
 
 const rootPath = path.dirname(path.resolve(__filename, '..'));
@@ -151,11 +151,12 @@ function Config(packageJson, parseCommandLineOptions = true) {
 			if (_.isArray(objValue)) {
 				return srcValue;
 			}
+			return undefined;
 		}
 	);
 
-	var validator = new z_schema();
-	var valid = validator.validate(appConfig, configSchema.config);
+	const validator = new Z_schema();
+	const valid = validator.validate(appConfig, configSchema.config);
 
 	if (!valid) {
 		console.error('Failed to validate config data', validator.getLastErrors());
@@ -171,6 +172,14 @@ function Config(packageJson, parseCommandLineOptions = true) {
 
 		validateForce(appConfig);
 
+		// Disable api, peers, broadcasts, syncing and ws workers when snapshotting mode required
+		if (program.snapshot) {
+			appConfig.api.enabled = false;
+			appConfig.peers.enabled = false;
+			appConfig.peers.list = [];
+			appConfig.broadcasts.active = false;
+			appConfig.syncing.active = false;
+		}
 		return appConfig;
 	}
 }
@@ -190,7 +199,7 @@ function loadJSONFile(filePath) {
 	} catch (err) {
 		console.error(`Failed to load file: ${filePath}`);
 		console.error(err.message);
-		process.exit(1);
+		return process.exit(1);
 	}
 }
 
@@ -276,7 +285,7 @@ function cleanDeep(
 
 		// Append when recursing arrays.
 		if (Array.isArray(result)) {
-			return result.push(value);
+			result.push(value);
 		}
 
 		result[key] = value;

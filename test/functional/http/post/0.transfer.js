@@ -15,29 +15,29 @@
 'use strict';
 
 require('../../functional.js');
-var crypto = require('crypto');
-var lisk = require('lisk-elements').default;
-var accountFixtures = require('../../../fixtures/accounts');
-var typesRepresentatives = require('../../../fixtures/types_representatives');
-var phases = require('../../../common/phases');
-var sendTransactionPromise = require('../../../common/helpers/api')
+const crypto = require('crypto');
+const lisk = require('lisk-elements').default;
+const accountFixtures = require('../../../fixtures/accounts');
+const typesRepresentatives = require('../../../fixtures/types_representatives');
+const phases = require('../../../common/phases');
+const sendTransactionPromise = require('../../../common/helpers/api')
 	.sendTransactionPromise;
-var randomUtil = require('../../../common/utils/random');
-var errorCodes = require('../../../../helpers/api_codes');
-var Bignum = require('../../../../helpers/bignum.js');
+const randomUtil = require('../../../common/utils/random');
+const errorCodes = require('../../../../helpers/api_codes');
+const Bignum = require('../../../../helpers/bignum.js');
 
 const { NORMALIZER } = global.constants;
 
 describe('POST /api/transactions (type 0) transfer funds', () => {
-	var transaction;
-	var goodTransaction = randomUtil.transaction();
-	var badTransactions = [];
-	var goodTransactions = [];
+	let transaction;
+	const goodTransaction = randomUtil.transaction();
+	const badTransactions = [];
+	const goodTransactions = [];
 	// Low-frills deep copy
-	var cloneGoodTransaction = JSON.parse(JSON.stringify(goodTransaction));
+	const cloneGoodTransaction = JSON.parse(JSON.stringify(goodTransaction));
 
-	var account = randomUtil.account();
-	var accountOffset = randomUtil.account();
+	const account = randomUtil.account();
+	const accountOffset = randomUtil.account();
 
 	describe('schema validations', () => {
 		typesRepresentatives.allTypes.forEach(test => {
@@ -142,7 +142,7 @@ describe('POST /api/transactions (type 0) transfer funds', () => {
 		});
 
 		it('from the genesis account should fail', () => {
-			var signedTransactionFromGenesis = {
+			const signedTransactionFromGenesis = {
 				type: 0,
 				amount: new Bignum('1000'),
 				senderPublicKey:
@@ -154,7 +154,7 @@ describe('POST /api/transactions (type 0) transfer funds', () => {
 				signature:
 					'f56a09b2f448f6371ffbe54fd9ac87b1be29fe29f27f001479e044a65e7e42fb1fa48dce6227282ad2a11145691421c4eea5d33ac7f83c6a42e1dcaa44572101',
 				id: '15307587316657110485',
-				fee: new Bignum(NORMALIZER).mul(0.1),
+				fee: new Bignum(NORMALIZER).multipliedBy(0.1),
 			};
 
 			return sendTransactionPromise(
@@ -249,13 +249,13 @@ describe('POST /api/transactions (type 0) transfer funds', () => {
 
 		describe('with additional data field', () => {
 			describe('invalid cases', () => {
-				var invalidCases = typesRepresentatives.additionalDataInvalidCases.concat(
+				const invalidCases = typesRepresentatives.additionalDataInvalidCases.concat(
 					typesRepresentatives.nonStrings
 				);
 
 				invalidCases.forEach(test => {
 					it(`using ${test.description} should fail`, () => {
-						var accountAdditionalData = randomUtil.account();
+						const accountAdditionalData = randomUtil.account();
 						transaction = lisk.transaction.transfer({
 							amount: 1,
 							passphrase: accountFixtures.genesis.passphrase,
@@ -275,13 +275,13 @@ describe('POST /api/transactions (type 0) transfer funds', () => {
 			});
 
 			describe('valid cases', () => {
-				var validCases = typesRepresentatives.additionalDataValidCases.concat(
+				const validCases = typesRepresentatives.additionalDataValidCases.concat(
 					typesRepresentatives.strings
 				);
 
 				validCases.forEach(test => {
 					it(`using ${test.description} should be ok`, () => {
-						var accountAdditionalData = randomUtil.account();
+						const accountAdditionalData = randomUtil.account();
 						transaction = lisk.transaction.transfer({
 							amount: 1,
 							passphrase: accountFixtures.genesis.passphrase,
@@ -295,6 +295,44 @@ describe('POST /api/transactions (type 0) transfer funds', () => {
 							);
 							goodTransactions.push(transaction);
 						});
+					});
+				});
+
+				it('using SQL characters escaped as single quote should be ok', () => {
+					const additioinalData = "'0'";
+					const accountAdditionalData = randomUtil.account();
+					transaction = lisk.transaction.transfer({
+						amount: 1,
+						passphrase: accountFixtures.genesis.passphrase,
+						recipientId: accountAdditionalData.address,
+						data: additioinalData,
+					});
+
+					return sendTransactionPromise(transaction).then(res => {
+						expect(res.body.data.message).to.be.equal(
+							'Transaction(s) accepted'
+						);
+						goodTransactions.push(transaction);
+					});
+				});
+			});
+
+			describe('edge cases', () => {
+				it("using '\u0000 hey:)' should be ok", () => {
+					const additioinalData = '\u0000 hey:)';
+					const accountAdditionalData = randomUtil.account();
+					transaction = lisk.transaction.transfer({
+						amount: 1,
+						passphrase: accountFixtures.genesis.passphrase,
+						recipientId: accountAdditionalData.address,
+						data: additioinalData,
+					});
+
+					return sendTransactionPromise(transaction).then(res => {
+						expect(res.body.data.message).to.be.equal(
+							'Transaction(s) accepted'
+						);
+						goodTransactions.push(transaction);
 					});
 				});
 			});

@@ -14,7 +14,6 @@
 
 'use strict';
 
-/* eslint-disable mocha/no-skipped-tests */
 const lisk = require('lisk-elements').default;
 const expect = require('chai').expect;
 const accountFixtures = require('../../../fixtures/accounts');
@@ -184,27 +183,28 @@ describe('system test (type 1) - second signature transactions from pool and pee
 					});
 				});
 
+				/* eslint-disable mocha/no-skipped-tests */
 				// TODO: This tests will be unskipped as part of #1652
 				describe.skip('when receiving block with multiple signature transaction with different id for same account', () => {
-					let signatureTransaction2;
 					let signatureTransaction3;
+					let signatureTransaction4;
 					let blockId;
 
 					beforeEach(done => {
-						signatureTransaction2 = lisk.transaction.registerSecondPassphrase({
-							passphrase: signatureAccount.passphrase,
-							secondPassphrase: randomUtil.password(),
-						});
-						signatureTransaction2.senderId = signatureAccount.address;
-
 						signatureTransaction3 = lisk.transaction.registerSecondPassphrase({
 							passphrase: signatureAccount.passphrase,
 							secondPassphrase: randomUtil.password(),
 						});
 						signatureTransaction3.senderId = signatureAccount.address;
+
+						signatureTransaction4 = lisk.transaction.registerSecondPassphrase({
+							passphrase: signatureAccount.passphrase,
+							secondPassphrase: randomUtil.password(),
+						});
+						signatureTransaction4.senderId = signatureAccount.address;
 						localCommon.createValidBlock(
 							library,
-							[signatureTransaction2, signatureTransaction3],
+							[signatureTransaction3, signatureTransaction4],
 							(err, block) => {
 								blockId = block.id;
 								expect(err).to.not.exist;
@@ -255,6 +255,7 @@ describe('system test (type 1) - second signature transactions from pool and pee
 						});
 					});
 				});
+				/* eslint-enable mocha/no-skipped-tests */
 			});
 		});
 	});

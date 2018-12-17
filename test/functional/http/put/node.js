@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-pending-tests */
 /*
  * Copyright © 2018 Lisk Foundation
  *
@@ -16,16 +15,16 @@
 'use strict';
 
 require('../../functional.js');
-var genesisDelegates = require('../../../data/genesis_delegates.json');
-var swaggerEndpoint = require('../../../common/swagger_spec');
-var apiHelpers = require('../../../common/helpers/api');
+const genesisDelegates = require('../../../data/genesis_delegates.json');
+const SwaggerEndpoint = require('../../../common/swagger_spec');
+const apiHelpers = require('../../../common/helpers/api');
 
-var expectSwaggerParamError = apiHelpers.expectSwaggerParamError;
+const expectSwaggerParamError = apiHelpers.expectSwaggerParamError;
 
 describe('PUT /node/status/forging', () => {
-	var validDelegate = genesisDelegates.delegates[0];
-	var updateForgingEndpoint = new swaggerEndpoint('PUT /node/status/forging');
-	var forgingStatusEndpoint = new swaggerEndpoint('GET /node/status/forging');
+	const validDelegate = genesisDelegates.delegates[0];
+	const updateForgingEndpoint = new SwaggerEndpoint('PUT /node/status/forging');
+	const forgingStatusEndpoint = new SwaggerEndpoint('GET /node/status/forging');
 
 	before(() => {
 		return forgingStatusEndpoint
@@ -43,18 +42,22 @@ describe('PUT /node/status/forging', () => {
 							},
 							200
 						)
-						.then(res => {
-							expect(res.body.data[0].publicKey).to.be.eql(
+						.then(updateForgingEndpointRes => {
+							expect(updateForgingEndpointRes.body.data[0].publicKey).to.be.eql(
 								validDelegate.publicKey
 							);
-							expect(res.body.data[0].forging).to.be.true;
+							expect(updateForgingEndpointRes.body.data[0].forging).to.be.true;
 						});
 				}
+
+				return null;
 			});
 	});
 
+	/* eslint-disable mocha/no-pending-tests */
 	// TODO: Find a library for supertest to make request from a proxy server
 	it('called from unauthorized IP should fail');
+	/* eslint-enable mocha/no-pending-tests */
 
 	it('using no params should fail', () => {
 		return updateForgingEndpoint.makeRequest({ data: {} }, 400).then(res => {
@@ -63,9 +66,9 @@ describe('PUT /node/status/forging', () => {
 	});
 
 	it('using without forging param should fail', () => {
-		var invalidPublicKey =
+		const invalidPublicKey =
 			'9d3058175acab969f41ad9b86f7a2926c74258670fe56b37c429c01fca9fff0a';
-		var params = {
+		const params = {
 			publicKey: invalidPublicKey,
 			password: validDelegate.password,
 		};
@@ -78,9 +81,9 @@ describe('PUT /node/status/forging', () => {
 	});
 
 	it('using invalid publicKey should fail', () => {
-		var invalidPublicKey =
+		const invalidPublicKey =
 			'9d3058175acab969f41ad9b86f7a2926c74258670fe56b37c429c01fca9fff0a';
-		var params = {
+		const params = {
 			publicKey: invalidPublicKey,
 			password: validDelegate.password,
 			forging: true,
@@ -94,7 +97,7 @@ describe('PUT /node/status/forging', () => {
 	});
 
 	it('using invalid password should fail', () => {
-		var params = {
+		const params = {
 			publicKey: validDelegate.publicKey,
 			password: 'invalid password',
 			forging: true,
@@ -110,7 +113,7 @@ describe('PUT /node/status/forging', () => {
 	});
 
 	it('using valid params should be ok', () => {
-		var params = {
+		const params = {
 			publicKey: validDelegate.publicKey,
 			password: validDelegate.password,
 			forging: true,
@@ -126,7 +129,7 @@ describe('PUT /node/status/forging', () => {
 	});
 
 	it('using forging false should disable forging status', () => {
-		var params = {
+		const params = {
 			publicKey: validDelegate.publicKey,
 			password: validDelegate.password,
 			forging: false,
@@ -154,7 +157,7 @@ describe('PUT /node/status/forging', () => {
 	});
 
 	it('using forging true should enable forging status', () => {
-		var params = {
+		const params = {
 			publicKey: validDelegate.publicKey,
 			password: validDelegate.password,
 			forging: false,

@@ -82,7 +82,7 @@ Transfer.prototype.verify = function(transaction, sender, cb) {
 	}
 
 	const amount = new Bignum(transaction.amount);
-	if (amount.lessThanOrEqualTo(0)) {
+	if (amount.isLessThanOrEqualTo(0)) {
 		return setImmediate(cb, 'Invalid transaction amount');
 	}
 
@@ -145,7 +145,7 @@ Transfer.prototype.applyConfirmed = function(
 				return setImmediate(cb, setAccountAndGetErr);
 			}
 
-			modules.accounts.mergeAccountAndGet(
+			return modules.accounts.mergeAccountAndGet(
 				{
 					address: transaction.recipientId,
 					balance: transaction.amount,
@@ -185,7 +185,7 @@ Transfer.prototype.undoConfirmed = function(
 				return setImmediate(cb, setAccountAndGetErr);
 			}
 
-			modules.accounts.mergeAccountAndGet(
+			return modules.accounts.mergeAccountAndGet(
 				{
 					address: transaction.recipientId,
 					balance: -transaction.amount,

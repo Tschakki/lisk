@@ -32,6 +32,7 @@ let modules;
 let library;
 let self;
 const { ACTIVE_DELEGATES } = global.constants;
+const exceptions = global.exceptions;
 const __private = {};
 
 __private.assetTypes = {};
@@ -39,6 +40,7 @@ __private.loaded = false;
 __private.keypairs = {};
 __private.tmpKeypairs = {};
 __private.forgeInterval = 1000;
+__private.delegatesListCache = {};
 
 /**
  * Main delegates methods. Initializes library with scope content and generates a Delegate instance.
@@ -98,6 +100,38 @@ class Delegates {
 }
 
 /**
+ * Caches delegate list for last 2 rounds.
+ *
+ * @private
+ * @param {number} round - Round Number
+ * @param {array} delegatesList - Delegate list
+ */
+__private.updateDelegateListCache = function(round, delegatesList) {
+	library.logger.debug('Updating delegate list cache for round', round);
+	__private.delegatesListCache[round] = delegatesList;
+	// We want to cache delegates for only last 2 rounds and get rid of old ones
+	__private.delegatesListCache = Object.keys(__private.delegatesListCache)
+		// sort round numbers in ascending order so we can have most recent 2 rounds at the end of the list.
+		.sort((a, b) => a - b)
+		// delete all round cache except last two rounds.
+		.slice(-2)
+		.reduce((acc, current) => {
+			acc[current] = __private.delegatesListCache[current];
+			return acc;
+		}, {});
+};
+
+/**
+ * Invalidates the cached delegate list.
+ *
+ */
+Delegates.prototype.clearDelegateListCache = function() {
+	library.logger.debug('Clearing delegate list cache.');
+	// We want to clear the cache.
+	__private.delegatesListCache = {};
+};
+
+/**
  * Gets delegate public keys sorted by vote descending.
  *
  * @private
@@ -111,7 +145,7 @@ __private.getKeysSortByVote = function(cb, tx) {
 		{
 			isDelegate: 1,
 			sort: { vote: -1, publicKey: 1 },
-			limit: slots.delegates,
+			limit: ACTIVE_DELEGATES,
 		},
 		['publicKey'],
 		(err, rows) => {
@@ -135,7 +169,7 @@ __private.getKeysSortByVote = function(cb, tx) {
  */
 __private.getDelegatesFromPreviousRound = function(cb, tx) {
 	(tx || library.db).rounds
-		.getDelegatesSnapshot(slots.delegates)
+		.getDelegatesSnapshot(ACTIVE_DELEGATES)
 		.then(rows => {
 			const delegatesPublicKeys = [];
 			rows.forEach(row => {
@@ -166,7 +200,7 @@ __private.validateBlockSlot = function(block, source, cb) {
 		}
 
 		const currentSlot = slots.getSlotNumber(block.timestamp);
-		const delegateId = activeDelegates[currentSlot % slots.delegates];
+		const delegateId = activeDelegates[currentSlot % ACTIVE_DELEGATES];
 
 		if (delegateId && block.generatorPublicKey === delegateId) {
 			return setImmediate(cb);
@@ -181,39 +215,34 @@ __private.validateBlockSlot = function(block, source, cb) {
 };
 
 /**
- * Gets slot time and keypair.
+ * Gets the assigned delegate to current slot and returns its keypair if present.
  *
  * @private
  * @param {number} slot
- * @param {number} height
+ * @param {number} round
  * @param {function} cb - Callback function
  * @returns {setImmediateCallback} cb, err, {time, keypair}
  * @todo Add description for the params
  */
-__private.getBlockSlotData = function(slot, height, cb) {
-	const round = slots.calcRound(height);
-	self.generateDelegateList(round, null, (err, activeDelegates) => {
-		if (err) {
-			return setImmediate(cb, err);
-		}
-
-		let currentSlot = slot;
-		const lastSlot = slots.getLastSlot(currentSlot);
-
-		for (; currentSlot < lastSlot; currentSlot += 1) {
-			const delegate_pos = currentSlot % slots.delegates;
-			const delegate_id = activeDelegates[delegate_pos];
-
-			if (delegate_id && __private.keypairs[delegate_id]) {
-				return setImmediate(cb, null, {
-					time: slots.getSlotTime(currentSlot),
-					keypair: __private.keypairs[delegate_id],
-				});
+__private.getDelegateKeypairForCurrentSlot = function(currentSlot, round, cb) {
+	self.generateDelegateList(
+		round,
+		null,
+		(generateDelegateListErr, activeDelegates) => {
+			if (generateDelegateListErr) {
+				return setImmediate(cb, generateDelegateListErr);
 			}
-		}
 
-		return setImmediate(cb, null, null);
-	});
+			const currentSlotIndex = currentSlot % ACTIVE_DELEGATES;
+			const currentSlotDelegate = activeDelegates[currentSlotIndex];
+
+			if (currentSlotDelegate && __private.keypairs[currentSlotDelegate]) {
+				return setImmediate(cb, null, __private.keypairs[currentSlotDelegate]);
+			}
+
+			return setImmediate(cb, null, null);
+		}
+	);
 };
 
 /**
@@ -247,23 +276,29 @@ __private.forge = function(cb) {
 	const lastBlock = modules.blocks.lastBlock.get();
 
 	if (currentSlot === slots.getSlotNumber(lastBlock.timestamp)) {
-		library.logger.debug('Waiting for next delegate slot');
+		library.logger.debug('Block already forged for the current slot');
 		return setImmediate(cb);
 	}
 
-	__private.getBlockSlotData(
+	// We calculate round using height + 1, because we want the delegate keypair for next block to be forged
+	const round = slots.calcRound(lastBlock.height + 1);
+
+	return __private.getDelegateKeypairForCurrentSlot(
 		currentSlot,
-		lastBlock.height + 1,
-		(err, currentBlockData) => {
-			if (err || currentBlockData === null) {
-				library.logger.warn('Skipping delegate slot', err);
+		round,
+		(getDelegateKeypairForCurrentSlotError, delegateKeypair) => {
+			if (getDelegateKeypairForCurrentSlotError) {
+				library.logger.error(
+					'Skipping delegate slot',
+					getDelegateKeypairForCurrentSlotError
+				);
 				return setImmediate(cb);
 			}
 
-			if (
-				slots.getSlotNumber(currentBlockData.time) !== slots.getSlotNumber()
-			) {
-				library.logger.debug('Delegate slot', slots.getSlotNumber());
+			if (delegateKeypair === null) {
+				library.logger.debug('Waiting for delegate slot', {
+					currentSlot: slots.getSlotNumber(),
+				});
 				return setImmediate(cb);
 			}
 
@@ -289,9 +324,9 @@ __private.forge = function(cb) {
 				].join(' ')
 			);
 
-			modules.blocks.process.generateBlock(
-				currentBlockData.keypair,
-				currentBlockData.time,
+			return modules.blocks.process.generateBlock(
+				delegateKeypair,
+				slots.getSlotTime(currentSlot),
 				blockGenerationErr => {
 					if (blockGenerationErr) {
 						library.logger.error(
@@ -314,7 +349,7 @@ __private.forge = function(cb) {
 							'round:',
 							slots.calcRound(forgedBlock.height),
 							'slot:',
-							slots.getSlotNumber(currentBlockData.time),
+							slots.getSlotNumber(forgedBlock.timestamp),
 							`reward: ${forgedBlock.reward}`,
 						].join(' ')
 					);
@@ -382,7 +417,7 @@ __private.checkDelegates = function(senderPublicKey, votes, state, cb, tx) {
 		return setImmediate(cb, e);
 	}
 
-	async.waterfall(
+	return async.waterfall(
 		[
 			// get all  public keys of delegates sender has voted for. Confirmed or unconfirmed based on state parameter.
 			function getExistingVotedPublicKeys(waterfallCb) {
@@ -532,7 +567,7 @@ __private.loadDelegates = function(cb) {
 		} delegates using encrypted passphrases from config`
 	);
 
-	async.eachSeries(
+	return async.eachSeries(
 		encryptedList,
 		(encryptedItem, seriesCb) => {
 			let passphrase;
@@ -566,7 +601,7 @@ __private.loadDelegates = function(cb) {
 				);
 			}
 
-			modules.accounts.getAccount(
+			return modules.accounts.getAccount(
 				{
 					publicKey: keypair.publicKey.toString('hex'),
 				},
@@ -654,7 +689,7 @@ Delegates.prototype.updateForgingStatus = function(
 		return setImmediate(cb, 'Invalid password and public key combination');
 	}
 
-	modules.accounts.getAccount(
+	return modules.accounts.getAccount(
 		{ publicKey: keypair.publicKey.toString('hex') },
 		(err, account) => {
 			if (err) {
@@ -696,7 +731,12 @@ Delegates.prototype.generateDelegateList = function(round, source, cb, tx) {
 	// Set default function for getting delegates
 	source = source || __private.getKeysSortByVote;
 
-	source((err, truncDelegateList) => {
+	if (__private.delegatesListCache[round]) {
+		library.logger.debug('Using delegate list from the cache for round', round);
+		return setImmediate(cb, null, __private.delegatesListCache[round]);
+	}
+
+	return source((err, truncDelegateList) => {
 		if (err) {
 			return setImmediate(cb, err);
 		}
@@ -720,6 +760,10 @@ Delegates.prototype.generateDelegateList = function(round, source, cb, tx) {
 				.digest();
 		}
 
+		// If the round is not an exception, cache the round.
+		if (!exceptions.ignoreDelegateListCacheForRounds.includes(round)) {
+			__private.updateDelegateListCache(round, truncDelegateList);
+		}
 		return setImmediate(cb, null, truncDelegateList);
 	}, tx);
 };
@@ -821,15 +865,15 @@ Delegates.prototype.getForgers = function(query, cb) {
 
 		for (
 			let i = query.offset + 1;
-			i <= slots.delegates && i <= query.limit + query.offset;
+			i <= ACTIVE_DELEGATES && i <= query.limit + query.offset;
 			i++
 		) {
-			if (activeDelegates[(currentSlot + i) % slots.delegates]) {
-				forgerKeys.push(activeDelegates[(currentSlot + i) % slots.delegates]);
+			if (activeDelegates[(currentSlot + i) % ACTIVE_DELEGATES]) {
+				forgerKeys.push(activeDelegates[(currentSlot + i) % ACTIVE_DELEGATES]);
 			}
 		}
 
-		library.db.delegates
+		return library.db.delegates
 			.getDelegatesByPublicKeys(forgerKeys)
 			.then(rows => {
 				rows.forEach(forger => {

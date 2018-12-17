@@ -15,16 +15,18 @@
 'use strict';
 
 const { BLOCK_RECEIPT_TIMEOUT, EPOCH_TIME } = global.constants;
+const async = require('async');
 // Submodules
-const blocksAPI = require('./blocks/api');
-const blocksVerify = require('./blocks/verify');
-const blocksProcess = require('./blocks/process');
-const blocksUtils = require('./blocks/utils');
-const blocksChain = require('./blocks/chain');
+const BlocksAPI = require('./blocks/api');
+const BlocksVerify = require('./blocks/verify');
+const BlocksProcess = require('./blocks/process');
+const BlocksUtils = require('./blocks/utils');
+const BlocksChain = require('./blocks/chain');
 
 // Private fields
 let library;
 let self;
+let modules = {};
 const __private = {};
 
 __private.lastBlock = {};
@@ -55,24 +57,25 @@ class Blocks {
 	constructor(cb, scope) {
 		library = {
 			logger: scope.logger,
+			network: scope.network,
 		};
 
 		// Initialize submodules with library content
 		this.submodules = {
-			api: new blocksAPI(
+			api: new BlocksAPI(
 				scope.logger,
 				scope.db,
 				scope.logic.block,
 				scope.schema
 			),
-			verify: new blocksVerify(
+			verify: new BlocksVerify(
 				scope.logger,
 				scope.logic.block,
 				scope.logic.transaction,
 				scope.db,
 				scope.config
 			),
-			process: new blocksProcess(
+			process: new BlocksProcess(
 				scope.logger,
 				scope.logic.block,
 				scope.logic.peers,
@@ -82,7 +85,7 @@ class Blocks {
 				scope.sequence,
 				scope.genesisBlock
 			),
-			utils: new blocksUtils(
+			utils: new BlocksUtils(
 				scope.logger,
 				scope.logic.account,
 				scope.logic.block,
@@ -90,7 +93,7 @@ class Blocks {
 				scope.db,
 				scope.genesisBlock
 			),
-			chain: new blocksChain(
+			chain: new BlocksChain(
 				scope.logger,
 				scope.logic.block,
 				scope.logic.transaction,
@@ -228,10 +231,32 @@ Blocks.prototype.isCleaning = {
  * Handle modules initialization.
  * Modules are not required in this file.
  */
-Blocks.prototype.onBind = function() {
+Blocks.prototype.onBind = function(scope) {
 	// TODO: move here blocks submodules modules load from app.js.
+	modules = {
+		cache: scope.cache,
+	};
+
 	// Set module as loaded
 	__private.loaded = true;
+};
+
+/**
+ * Clear blocks and transactions API cache and emit socket notification `blocks/change`.
+ *
+ * @param {Block} block
+ * @todo Add description for the params
+ * @todo Add @returns tag
+ */
+Blocks.prototype.onNewBlock = function(block) {
+	const tasks = [
+		modules.cache.KEYS.blocksApi,
+		modules.cache.KEYS.transactionsApi,
+	].map(pattern => callback => modules.cache.clearCacheFor(pattern, callback));
+
+	async.parallel(async.reflectAll(tasks), () =>
+		library.network.io.sockets.emit('blocks/change', block)
+	);
 };
 
 /**
@@ -250,13 +275,12 @@ Blocks.prototype.cleanup = function(cb) {
 		return setImmediate(cb);
 	}
 	// Module is not ready, repeat
-	setImmediate(function nextWatch() {
+	return setImmediate(function nextWatch() {
 		if (__private.isActive) {
 			library.logger.info('Waiting for block processing to finish...');
-			setTimeout(nextWatch, 10000); // 10 sec
-		} else {
-			return setImmediate(cb);
+			return setTimeout(nextWatch, 10000); // 10 sec
 		}
+		return setImmediate(cb);
 	});
 };
 

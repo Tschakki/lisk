@@ -106,6 +106,16 @@ __private.list = function(filter, cb) {
 		params.height = filter.height;
 	}
 
+	if (filter.fromTimestamp >= 0) {
+		where.push('"b_timestamp" >= ${fromTimestamp}');
+		params.fromTimestamp = filter.fromTimestamp;
+	}
+
+	if (filter.toTimestamp >= 1) {
+		where.push('"b_timestamp" <= ${toTimestamp}');
+		params.toTimestamp = filter.toTimestamp;
+	}
+
 	// FIXME: Useless condition
 	if (filter.totalAmount >= 0) {
 		where.push('"b_totalAmount" = ${totalAmount}');
@@ -149,7 +159,7 @@ __private.list = function(filter, cb) {
 		return setImmediate(cb, sort.error);
 	}
 
-	library.db.blocks
+	return library.db.blocks
 		.list(
 			Object.assign(
 				{},
@@ -190,7 +200,7 @@ API.prototype.getBlocks = function(filters, cb) {
 		return setImmediate(cb, 'Blockchain is loading');
 	}
 
-	__private.list(filters, (err, data) => {
+	return __private.list(filters, (err, data) => {
 		if (err) {
 			return setImmediate(
 				cb,

@@ -35,12 +35,12 @@ module.exports = function(configurations, network) {
 		const numberOfTransactions = 3;
 
 		const postSignatures = signature => {
-			const postSignatures = {
+			const signaturesToPost = {
 				signatures: [signature],
 			};
 			return Promise.all(
 				network.sockets.map(socket => {
-					return socket.emit('postSignatures', postSignatures);
+					return socket.emit('postSignatures', signaturesToPost);
 				})
 			);
 		};
@@ -72,12 +72,13 @@ module.exports = function(configurations, network) {
 				// Adding two extra blocks as a safety timeframe
 				const blocksToWait =
 					Math.ceil(numberOfTransactions / MAX_TRANSACTIONS_PER_BLOCK) + 2;
-				network.waitForBlocksOnAllNodes(blocksToWait)
-				.then(() => {
-					return confirmTransactionsOnAllNodes(transactions, configurations);
-				})
-				.then(done)
-				.catch(done);
+				network
+					.waitForBlocksOnAllNodes(blocksToWait)
+					.then(() => {
+						return confirmTransactionsOnAllNodes(transactions, configurations);
+					})
+					.then(done)
+					.catch(done);
 			});
 		});
 
@@ -125,7 +126,7 @@ module.exports = function(configurations, network) {
 			it('sending the required signatures in the keysgroup agreement', () => {
 				return Promise.all(
 					numbers.map(member => {
-						postSignatures(signatures[member][0]).then(() => {
+						return postSignatures(signatures[member][0]).then(() => {
 							return postSignatures(signatures[member][1]);
 						});
 					})
@@ -136,7 +137,8 @@ module.exports = function(configurations, network) {
 				// Adding two extra blocks as a safety timeframe
 				const blocksToWait =
 					Math.ceil(numberOfTransactions / MAX_TRANSACTIONS_PER_BLOCK) + 2;
-				network.waitForBlocksOnAllNodes(blocksToWait)
+				network
+					.waitForBlocksOnAllNodes(blocksToWait)
 					.then(() => {
 						return confirmTransactionsOnAllNodes(transactions, configurations);
 					})

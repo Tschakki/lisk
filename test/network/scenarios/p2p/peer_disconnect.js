@@ -29,7 +29,6 @@ module.exports = function(
 	const EXPECTED_TOTAL_CONNECTIONS_AFTER_REMOVING_PEER =
 		(TOTAL_PEERS_LESS_ONE - 1) * TOTAL_PEERS_LESS_ONE * 2;
 
-
 	describe('@network : peer Disconnect', () => {
 		const wsPorts = new Set();
 
@@ -46,7 +45,7 @@ module.exports = function(
 								if (peer.wsPort > 5000 && peer.wsPort <= 5009) {
 									wsPorts.add(peer.wsPort);
 								}
-								expect(peer.state).to.be.eql(Peer.STATE.CONNECTED);
+								return expect(peer.state).to.be.eql(Peer.STATE.CONNECTED);
 							});
 						}
 					});
@@ -73,12 +72,11 @@ module.exports = function(
 								numOfConnections - NUMBER_OF_MONITORING_CONNECTIONS <=
 								EXPECTED_TOTAL_CONNECTIONS_AFTER_REMOVING_PEER
 							) {
-								done();
-							} else {
-								done(
-									`There are ${numOfConnections} established connections on web socket ports.`
-								);
+								return done();
 							}
+							return done(
+								`There are ${numOfConnections} established connections on web socket ports.`
+							);
 						}
 					);
 				});
@@ -101,12 +99,11 @@ module.exports = function(
 							}
 
 							if (numOfConnections <= EXPECTED_TOTAL_CONNECTIONS) {
-								done();
-							} else {
-								done(
-									`There are ${numOfConnections} established connections on web socket ports.`
-								);
+								return done();
 							}
+							return done(
+								`There are ${numOfConnections} established connections on web socket ports.`
+							);
 						}
 					);
 				});
@@ -120,9 +117,7 @@ module.exports = function(
 					const peersPromises = [];
 					for (let i = 1; i < TOTAL_PEERS; i++) {
 						const nodeName = `node_${i}`;
-						peersPromises.push(
-							network.restartNode(nodeName, true)
-						);
+						peersPromises.push(network.restartNode(nodeName, true));
 					}
 					console.info('Wait for nodes to be started');
 					return Promise.all(peersPromises)
@@ -149,12 +144,11 @@ module.exports = function(
 									numOfConnections - NUMBER_OF_MONITORING_CONNECTIONS <=
 									EXPECTED_TOTAL_CONNECTIONS
 								) {
-									done();
-								} else {
-									done(
-										`There are ${numOfConnections} established connections on web socket ports.`
-									);
+									return done();
 								}
+								return done(
+									`There are ${numOfConnections} established connections on web socket ports.`
+								);
 							}
 						);
 					});

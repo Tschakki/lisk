@@ -22,10 +22,10 @@ const slots = require('../../helpers/slots');
 const Bignum = require('../../helpers/bignum.js');
 const accountsFixtures = require('../fixtures/accounts');
 const randomUtil = require('../common/utils/random');
-const queriesHelper = require('../common/integration/sql/queriesHelper.js');
+const QueriesHelper = require('../common/integration/sql/queriesHelper.js');
 const localCommon = require('./common');
 
-const { REWARDS } = global.constants;
+const { REWARDS, ACTIVE_DELEGATES } = global.constants;
 
 describe('rounds', () => {
 	let library;
@@ -39,7 +39,7 @@ describe('rounds', () => {
 
 	localCommon.beforeBlock('lisk_functional_rounds', lib => {
 		library = lib;
-		Queries = new queriesHelper(lib, lib.db);
+		Queries = new QueriesHelper(lib, lib.db);
 
 		generateDelegateListPromise = Promise.promisify(
 			library.modules.delegates.generateDelegateList
@@ -196,10 +196,12 @@ describe('rounds', () => {
 			});
 
 			_.each(delegate.array_agg, voter => {
-				const found = _.find(accounts, {
+				const foundAccount = _.find(accounts, {
 					address: voter,
 				});
-				votes = new Bignum(votes).plus(new Bignum(found.balance)).toString();
+				votes = new Bignum(votes)
+					.plus(new Bignum(foundAccount.balance))
+					.toString();
 			});
 			found.vote = votes;
 		});
@@ -217,23 +219,31 @@ describe('rounds', () => {
 				const bVote = new Bignum(accounts[b].vote);
 				const aPK = accounts[a].publicKey;
 				const bPK = accounts[b].publicKey;
-
-				const bufferComp =
-					// If both are buffers
-					aPK && bPK
-						? // Return result of the compare
-							Buffer.compare(bPK, aPK)
-						: // If both are null - return 0
-							aPK === null && bPK === null
-							? 0
-							: // If first is null - return -1, if not return 1
-								aPK === null ? -1 : 1;
-
 				// Compare vote weights first:
 				// if first is less than second - return -1,
 				// if first is greather than second - return 1,
 				// if both are equal - compare public keys
-				return aVote.lt(bVote) ? -1 : aVote.gt(bVote) ? 1 : bufferComp;
+				if (aVote.lt(bVote)) {
+					return -1;
+				}
+				if (aVote.gt(bVote)) {
+					return 1;
+				}
+				// If both are buffers
+				// Return result of the compare
+				if (aPK && bPK) {
+					return Buffer.compare(bPK, aPK);
+				}
+				// If both are null - return 0
+				if (aPK === null && bPK === null) {
+					return 0;
+				}
+				// If first is null - return -1,
+				if (aPK === null) {
+					return -1;
+				}
+				// if not return 1;
+				return 1;
 			})
 			.map(key => accounts[key])
 			.reverse();
@@ -297,10 +307,10 @@ describe('rounds', () => {
 		);
 
 		const feesPerDelegate = new Bignum(feesTotal.toPrecision(15))
-			.dividedBy(slots.delegates)
-			.floor();
+			.dividedBy(ACTIVE_DELEGATES)
+			.integerValue(Bignum.ROUND_FLOOR);
 		const feesRemaining = new Bignum(feesTotal.toPrecision(15)).minus(
-			feesPerDelegate.times(slots.delegates)
+			feesPerDelegate.multipliedBy(ACTIVE_DELEGATES)
 		);
 
 		__testContext.debug(
@@ -366,7 +376,7 @@ describe('rounds', () => {
 							tick.isRoundChanged = tick.before.round !== tick.after.round;
 							// Detect last block of round
 							tick.isLastBlockOfRound =
-								tick.after.block.height % slots.delegates === 0;
+								tick.after.block.height % ACTIVE_DELEGATES === 0;
 
 							return Promise.join(
 								getMemAccounts(),
@@ -399,6 +409,8 @@ describe('rounds', () => {
 											}
 										);
 									}
+
+									return true;
 								}
 							);
 						}
@@ -669,7 +681,7 @@ describe('rounds', () => {
 		describe('after round 1 is finished', () => {
 			it('last block height should equal active delegates count', () => {
 				const lastBlock = library.modules.blocks.lastBlock.get();
-				return expect(lastBlock.height).to.be.equal(slots.delegates);
+				return expect(lastBlock.height).to.be.equal(ACTIVE_DELEGATES);
 			});
 
 			it('should calculate rewards for round 1 correctly - all should be the same (calculated, rounds_rewards, mem_accounts)', () => {
@@ -778,9 +790,9 @@ describe('rounds', () => {
 			});
 
 			it('delegates list should be equal to one generated at the beginning of round 1', () => {
-				const lastBlock = library.modules.blocks.lastBlock.get();
+				const freshLastBlock = library.modules.blocks.lastBlock.get();
 				return generateDelegateListPromise(
-					slots.calcRound(lastBlock.height + 1),
+					slots.calcRound(freshLastBlock.height + 1),
 					null
 				).then(delegatesList => {
 					expect(delegatesList).to.deep.equal(round.delegatesList);
@@ -840,8 +852,8 @@ describe('rounds', () => {
 			});
 
 			it('last block height should be at height 99 after deleting one more block', () => {
-				const lastBlock = library.modules.blocks.lastBlock.get();
-				return expect(lastBlock.height).to.equal(99);
+				const freshLastBlock = library.modules.blocks.lastBlock.get();
+				return expect(freshLastBlock.height).to.equal(99);
 			});
 			// eslint-disable-next-line
 			it('transactions from deleted block should be added back to transaction pool', done => {
@@ -875,8 +887,8 @@ describe('rounds', () => {
 
 			describe('after forging 1 block', () => {
 				it('should unvote expected forger of last block of round (block data)', () => {
-					const lastBlock = library.modules.blocks.lastBlock.get();
-					return Queries.getFullBlock(lastBlock.height).then(blocks => {
+					const freshLastBlock = library.modules.blocks.lastBlock.get();
+					return Queries.getFullBlock(freshLastBlock.height).then(blocks => {
 						expect(blocks[0].transactions[0].asset.votes[0]).to.equal(
 							`-${lastBlockForger}`
 						);
@@ -895,9 +907,9 @@ describe('rounds', () => {
 
 			describe('after round finish', () => {
 				it('delegates list should be different than one generated at the beginning of round 1', () => {
-					const lastBlock = library.modules.blocks.lastBlock.get();
+					const freshLastBlock = library.modules.blocks.lastBlock.get();
 					return generateDelegateListPromise(
-						slots.calcRound(lastBlock.height + 1),
+						slots.calcRound(freshLastBlock.height + 1),
 						null
 					).then(delegatesList => {
 						expect(delegatesList).to.not.deep.equal(round.delegatesList);
@@ -917,9 +929,9 @@ describe('rounds', () => {
 			describe('after last block of round is deleted', () => {
 				it('delegates list should be equal to one generated at the beginning of round 1', () => {
 					return deleteLastBlockPromise().then(() => {
-						const lastBlock = library.modules.blocks.lastBlock.get();
+						const freshLastBlock = library.modules.blocks.lastBlock.get();
 						return generateDelegateListPromise(
-							slots.calcRound(lastBlock.height),
+							slots.calcRound(freshLastBlock.height),
 							null
 						).then(delegatesList => {
 							expect(delegatesList).to.deep.equal(round.delegatesList);
@@ -986,27 +998,29 @@ describe('rounds', () => {
 					lastBlock = library.modules.blocks.lastBlock.get();
 					deleteLastBlockPromise()
 						.then(() => {
-							_.each(lastBlock.transactions, transaction => {
+							_.each(lastBlock.transactions, eachTransaction => {
 								// Remove transaction from pool
-								transactionPool.removeUnconfirmedTransaction(transaction.id);
+								transactionPool.removeUnconfirmedTransaction(
+									eachTransaction.id
+								);
 							});
 							lastBlock = library.modules.blocks.lastBlock.get();
 							deleteLastBlockPromise()
 								.then(() => {
-									_.each(lastBlock.transactions, transaction => {
+									_.each(lastBlock.transactions, eachTransaction => {
 										// Remove transaction from pool
 										transactionPool.removeUnconfirmedTransaction(
-											transaction.id
+											eachTransaction.id
 										);
 									});
 									done();
 								})
-								.catch(err => {
-									done(err);
+								.catch(deleteLastBlockPromiseErr => {
+									done(deleteLastBlockPromiseErr);
 								});
 						})
-						.catch(err => {
-							done(err);
+						.catch(unexpectedErr => {
+							done(unexpectedErr);
 						});
 				});
 			});
@@ -1166,8 +1180,8 @@ describe('rounds', () => {
 
 				it('block just before rewards start should have reward = 0', () => {
 					const lastBlock = library.modules.blocks.lastBlock.get();
-					return expect(lastBlock.reward.equals(expectedRewardsPerBlock)).to.be
-						.true;
+					return expect(lastBlock.reward.isEqualTo(expectedRewardsPerBlock)).to
+						.be.true;
 				});
 			});
 
@@ -1210,8 +1224,9 @@ describe('rounds', () => {
 						describe('rewards check', () => {
 							it('all blocks from now until round end should have proper rewards (5 LSK)', () => {
 								const lastBlock = library.modules.blocks.lastBlock.get();
-								return expect(lastBlock.reward.equals(expectedRewardsPerBlock))
-									.to.be.true;
+								return expect(
+									lastBlock.reward.isEqualTo(expectedRewardsPerBlock)
+								).to.be.true;
 							});
 						});
 

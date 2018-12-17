@@ -16,17 +16,18 @@
 
 require('../../functional.js');
 
-var waitFor = require('../../../common/utils/wait_for');
-var swaggerEndpoint = require('../../../common/swagger_spec');
-var apiHelpers = require('../../../common/helpers/api');
+const waitFor = require('../../../common/utils/wait_for');
+const SwaggerEndpoint = require('../../../common/swagger_spec');
+const apiHelpers = require('../../../common/helpers/api');
+const slots = require('../../../../helpers/slots');
 
-var expectSwaggerParamError = apiHelpers.expectSwaggerParamError;
+const expectSwaggerParamError = apiHelpers.expectSwaggerParamError;
 
 describe('GET /blocks', () => {
-	var blocksEndpoint = new swaggerEndpoint('GET /blocks');
+	const blocksEndpoint = new SwaggerEndpoint('GET /blocks');
 
 	// Testnet genesis block data
-	var block = {
+	const block = {
 		blockHeight: 1,
 		id: '6524861224470851795',
 		generatorPublicKey:
@@ -35,18 +36,18 @@ describe('GET /blocks', () => {
 		totalFee: 0,
 	};
 
-	var testBlocksUnder101 = false;
+	const testBlocksUnder101 = false;
 
 	function expectHeightCheck(res) {
-		res.body.data.forEach(block => {
-			if (block.height === 1) {
-				expect(block.previousBlockId).to.be.empty;
+		res.body.data.forEach(eachBlock => {
+			if (eachBlock.height === 1) {
+				expect(eachBlock.previousBlockId).to.be.empty;
 			}
 		});
 	}
 
 	before(() => {
-		return waitFor.blocksPromise(2);
+		return waitFor.blocksPromise(2, null);
 	});
 
 	describe('?', () => {
@@ -60,7 +61,7 @@ describe('GET /blocks', () => {
 			});
 
 			it('using genesisBlock id should return the result', () => {
-				var id = '6524861224470851795';
+				const id = '6524861224470851795';
 
 				return blocksEndpoint.makeRequest({ blockId: id }, 200).then(res => {
 					expect(res.body.data[0].id).to.equal(id);
@@ -109,6 +110,72 @@ describe('GET /blocks', () => {
 					expect(res.body.data[0].height).to.equal(10);
 					expectHeightCheck(res);
 				});
+			});
+		});
+
+		describe('fromTimestamp', () => {
+			it('using invalid fromTimestamp should fail', () => {
+				return blocksEndpoint
+					.makeRequest(
+						{
+							fromTimestamp: -1,
+						},
+						400
+					)
+					.then(res => {
+						expectSwaggerParamError(res, 'fromTimestamp');
+					});
+			});
+
+			it('using valid fromTimestamp should return transactions', () => {
+				// Last hour lisk time
+				const queryTime = slots.getTime() - 60 * 60;
+
+				return blocksEndpoint
+					.makeRequest(
+						{
+							fromTimestamp: queryTime,
+						},
+						200
+					)
+					.then(res => {
+						res.body.data.forEach(transaction => {
+							expect(transaction.timestamp).to.be.at.least(queryTime);
+						});
+					});
+			});
+		});
+
+		describe('toTimestamp', () => {
+			it('using invalid toTimestamp should fail', () => {
+				return blocksEndpoint
+					.makeRequest(
+						{
+							toTimestamp: 0,
+						},
+						400
+					)
+					.then(res => {
+						expectSwaggerParamError(res, 'toTimestamp');
+					});
+			});
+
+			it('using valid toTimestamp should return transactions', () => {
+				// Current lisk time
+				const queryTime = slots.getTime();
+
+				return blocksEndpoint
+					.makeRequest(
+						{
+							toTimestamp: queryTime,
+						},
+						200
+					)
+					.then(res => {
+						res.body.data.forEach(transaction => {
+							expect(transaction.timestamp).to.be.at.most(queryTime);
+						});
+					});
 			});
 		});
 

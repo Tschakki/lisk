@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-pending-tests, mocha/no-skipped-tests */
 /*
  * Copyright © 2018 Lisk Foundation
  *
@@ -15,51 +14,51 @@
 
 'use strict';
 
-var rewire = require('rewire');
-var chai = require('chai');
-var randomstring = require('randomstring');
-var Bignum = require('../../../helpers/bignum.js');
-var swaggerHelper = require('../../../helpers/swagger');
-var WSServer = require('../../common/ws/server_master');
-var generateRandomActivePeer = require('../../fixtures/peers')
+const rewire = require('rewire');
+const chai = require('chai');
+const randomstring = require('randomstring');
+const Bignum = require('../../../helpers/bignum.js');
+const swaggerHelper = require('../../../helpers/swagger');
+const WSServer = require('../../common/ws/server_master');
+const generateRandomActivePeer = require('../../fixtures/peers')
 	.generateRandomActivePeer;
-var Block = require('../../fixtures/blocks').Block;
-var Rules = require('../../../api/ws/workers/rules');
+const Block = require('../../fixtures/blocks').Block;
+const Rules = require('../../../api/ws/workers/rules');
 
-var TransportModule = rewire('../../../modules/transport.js');
+const TransportModule = rewire('../../../modules/transport.js');
 
 const { MAX_PEERS, MAX_SHARED_TRANSACTIONS } = __testContext.config.constants;
-var expect = chai.expect;
+const expect = chai.expect;
 
 // TODO: Sometimes the callback error is null, other times it's undefined. It should be consistent.
 describe('transport', () => {
-	var dbStub;
-	var loggerStub;
-	var busStub;
-	var schemaStub;
-	var networkStub;
-	var balancesSequenceStub;
-	var transactionStub;
-	var blockStub;
-	var peersStub;
-	var broadcasterStubRef;
-	var transportInstance;
-	var library;
-	var __private;
-	var modules;
-	var defaultScope;
-	var restoreRewiredTopDeps;
-	var peerMock;
-	var definitions;
-	var wsRPC;
-	var transaction;
-	var block;
-	var peersList;
-	var blocksList;
-	var transactionsList;
-	var multisignatureTransactionsList;
-	var blockMock;
-	var error;
+	let dbStub;
+	let loggerStub;
+	let busStub;
+	let schemaStub;
+	let networkStub;
+	let balancesSequenceStub;
+	let transactionStub;
+	let blockStub;
+	let peersStub;
+	let broadcasterStubRef;
+	let transportInstance;
+	let library;
+	let __private;
+	let modules;
+	let defaultScope;
+	let restoreRewiredTopDeps;
+	let peerMock;
+	let definitions;
+	let wsRPC;
+	let transaction;
+	let block;
+	let peersList;
+	let blocksList;
+	let transactionsList;
+	let multisignatureTransactionsList;
+	let blockMock;
+	let error;
 
 	const SAMPLE_SIGNATURE_1 = {
 		transactionId: '222675625422353767',
@@ -100,7 +99,7 @@ describe('transport', () => {
 				'2821d93a742c4edf5fd960efad41a4def7bf0fd0f7c09869aed524f6f52bf9c97a617095e2c712bd28b4279078a29509b339ac55187854006591aa759784c205',
 		};
 
-		blockMock = Block();
+		blockMock = new Block();
 
 		transactionsList = [
 			{
@@ -241,8 +240,8 @@ describe('transport', () => {
 
 	describe('constructor', () => {
 		describe('library', () => {
-			var localTransportInstance;
-			var transportSelf;
+			let localTransportInstance;
+			let transportSelf;
 
 			beforeEach(done => {
 				localTransportInstance = new TransportModule((err, transport) => {
@@ -300,8 +299,8 @@ describe('transport', () => {
 	});
 
 	describe('__private', () => {
-		var __privateOriginal;
-		var restoreRewiredDeps;
+		let __privateOriginal;
+		let restoreRewiredDeps;
 
 		beforeEach(done => {
 			__privateOriginal = {};
@@ -372,7 +371,7 @@ describe('transport', () => {
 
 		describe('removePeer', () => {
 			describe('when options.nonce is undefined', () => {
-				var result;
+				let result;
 
 				beforeEach(done => {
 					result = __private.removePeer({}, 'Custom peer remove message');
@@ -392,8 +391,8 @@ describe('transport', () => {
 			});
 
 			describe('when options.nonce is defined', () => {
-				var removeSpy;
-				var validNonce;
+				let removeSpy;
+				let auxValidNonce;
 
 				beforeEach(done => {
 					removeSpy = sinonSandbox.spy();
@@ -410,11 +409,11 @@ describe('transport', () => {
 						},
 					};
 
-					validNonce = randomstring.generate(16);
+					auxValidNonce = randomstring.generate(16);
 
 					__private.removePeer(
 						{
-							nonce: validNonce,
+							nonce: auxValidNonce,
 						},
 						'Custom peer remove message'
 					);
@@ -454,7 +453,7 @@ describe('transport', () => {
 				});
 
 				describe('when __private.receiveSignature fails', () => {
-					var receiveSignatureError;
+					let receiveSignatureError;
 
 					beforeEach(done => {
 						receiveSignatureError = 'Error processing signature: Error message';
@@ -538,7 +537,7 @@ describe('transport', () => {
 				});
 
 				describe('when modules.multisignatures.processSignature fails', () => {
-					var processSignatureError;
+					let processSignatureError;
 
 					beforeEach(done => {
 						processSignatureError = new Error('Transaction not found');
@@ -561,7 +560,7 @@ describe('transport', () => {
 			});
 
 			describe('when library.schema.validate fails', () => {
-				var validateErr;
+				let validateErr;
 
 				beforeEach(done => {
 					validateErr = new Error('Signature did not match schema');
@@ -644,7 +643,7 @@ describe('transport', () => {
 					});
 
 					describe('when call __private.receiveTransaction fails', () => {
-						var receiveTransactionError;
+						let receiveTransactionError;
 
 						beforeEach(done => {
 							receiveTransactionError = 'Invalid transaction body - ...';
@@ -674,7 +673,7 @@ describe('transport', () => {
 		});
 
 		describe('receiveTransaction', () => {
-			var peerAddressString;
+			let peerAddressString;
 
 			beforeEach(done => {
 				sinonSandbox
@@ -743,8 +742,8 @@ describe('transport', () => {
 			});
 
 			describe('when library.logic.transaction.objectNormalize throws', () => {
-				var extraLogMessage;
-				var objectNormalizeError;
+				let extraLogMessage;
+				let objectNormalizeError;
 
 				beforeEach(done => {
 					extraLogMessage = 'This is a log message';
@@ -767,7 +766,7 @@ describe('transport', () => {
 				});
 
 				it('should call library.logger.debug with "Transaction normalization failed" error message and error details object', () => {
-					var errorDetails = {
+					const errorDetails = {
 						id: transaction.id,
 						err: 'Unknown transaction type 0',
 						module: 'transport',
@@ -782,7 +781,7 @@ describe('transport', () => {
 				});
 
 				it('should call __private.removePeer with peer details object', () => {
-					var peerDetails = { nonce: validNonce, code: 'ETRANSACTION' };
+					const peerDetails = { nonce: validNonce, code: 'ETRANSACTION' };
 					return expect(
 						__private.removePeer.calledWith(peerDetails, extraLogMessage)
 					).to.be.true;
@@ -846,7 +845,7 @@ describe('transport', () => {
 			});
 
 			describe('when modules.transactions.processUnconfirmedTransaction fails', () => {
-				var processUnconfirmedTransactionError;
+				let processUnconfirmedTransactionError;
 
 				beforeEach(done => {
 					processUnconfirmedTransactionError = `Transaction is already processed: ${
@@ -890,7 +889,7 @@ describe('transport', () => {
 			});
 
 			describe('when modules.transactions.processUnconfirmedTransaction succeeds', () => {
-				var result;
+				let result;
 
 				beforeEach(done => {
 					__private.receiveTransaction(
@@ -916,8 +915,8 @@ describe('transport', () => {
 		});
 
 		describe('__private.checkInternalAccess', () => {
-			var query;
-			var result;
+			let query;
+			let result;
 
 			beforeEach(done => {
 				query = {
@@ -968,7 +967,7 @@ describe('transport', () => {
 			});
 
 			describe('when library.schema.validate fails', () => {
-				var validateErr;
+				let validateErr;
 
 				beforeEach(done => {
 					validateErr = new Error('Query did not match schema');
@@ -994,12 +993,12 @@ describe('transport', () => {
 	});
 
 	describe('Transport', () => {
-		var restoreRewiredTransportDeps;
+		let restoreRewiredTransportDeps;
 
 		beforeEach(done => {
 			peersList = [];
-			for (var i = 0; i < 10; i++) {
-				var peer = generateRandomActivePeer();
+			for (let i = 0; i < 10; i++) {
+				const peer = generateRandomActivePeer();
 				peer.rpc = {
 					updateMyself: sinonSandbox.stub().callsArg(1),
 				};
@@ -1007,9 +1006,9 @@ describe('transport', () => {
 			}
 
 			blocksList = [];
-			for (var j = 0; j < 10; j++) {
-				var block = Block();
-				blocksList.push(block);
+			for (let j = 0; j < 10; j++) {
+				const auxBlock = new Block();
+				blocksList.push(auxBlock);
 			}
 
 			transportInstance = new TransportModule((err, transportSelf) => {
@@ -1043,7 +1042,7 @@ describe('transport', () => {
 							listRandomConnected: sinonSandbox.stub().returns(peersList),
 						},
 						block: {
-							objectNormalize: sinonSandbox.stub().returns(Block()),
+							objectNormalize: sinonSandbox.stub().returns(new Block()),
 						},
 					},
 					db: {
@@ -1113,7 +1112,7 @@ describe('transport', () => {
 		});
 
 		describe('poorConsensus', () => {
-			var isPoorConsensusResult;
+			let isPoorConsensusResult;
 
 			describe('when library.config.forging.force is true', () => {
 				beforeEach(done => {
@@ -1172,7 +1171,7 @@ describe('transport', () => {
 			});
 
 			describe('modules', () => {
-				var modulesObject;
+				let modulesObject;
 
 				beforeEach(done => {
 					modulesObject = TransportModule.__get__('modules');
@@ -1191,7 +1190,7 @@ describe('transport', () => {
 			});
 
 			describe('definitions', () => {
-				var definitionsObject;
+				let definitionsObject;
 
 				beforeEach(done => {
 					definitionsObject = TransportModule.__get__('definitions');
@@ -1368,12 +1367,12 @@ describe('transport', () => {
 				});
 
 				describe('when peer.rpc.updateMyself fails', () => {
-					const error = 'RPC failure';
+					const rpcFailure = 'RPC failure';
 
 					beforeEach(done => {
 						peerMock = generateRandomActivePeer();
 						peerMock.rpc = {
-							updateMyself: sinonSandbox.stub().callsArgWith(1, error),
+							updateMyself: sinonSandbox.stub().callsArgWith(1, rpcFailure),
 						};
 						library.logic.peers.listRandomConnected = sinonSandbox
 							.stub()
@@ -1386,7 +1385,10 @@ describe('transport', () => {
 						return expect(
 							library.logger.debug.calledWith(
 								'Transport->broadcastHeaders: Failed to notify peer about self',
-								{ peer: peerMock.string, err: error }
+								{
+									peer: peerMock.string,
+									err: rpcFailure,
+								}
 							)
 						).to.be.true;
 					});
@@ -1490,22 +1492,16 @@ describe('transport', () => {
 						)
 					).to.be.true;
 				});
-
-				it('should call library.network.io.sockets.emit with "blocks/change" and block', () => {
-					return expect(
-						library.network.io.sockets.emit.calledWith('blocks/change', block)
-					).to.be.true;
-				});
 			});
 		});
 
 		describe('Transport.prototype.shared', () => {
-			var result;
-			var query;
-			var req;
+			let result;
+			let query;
+			let req;
 
 			describe('blocksCommon', () => {
-				var validateErr;
+				let validateErr;
 
 				describe('when query is undefined', () => {
 					beforeEach(done => {
@@ -1655,7 +1651,7 @@ describe('transport', () => {
 					});
 
 					describe('when modules.blocks.utils.loadBlocksData fails', () => {
-						var loadBlockFailed;
+						let loadBlockFailed;
 
 						beforeEach(done => {
 							loadBlockFailed = new Error('Failed to load blocks...');
@@ -1684,10 +1680,10 @@ describe('transport', () => {
 			});
 
 			describe('postBlock', () => {
-				var query;
+				let postBlockQuery;
 
 				beforeEach(done => {
-					query = {
+					postBlockQuery = {
 						block: blockMock,
 						nonce: validNonce,
 					};
@@ -1700,7 +1696,7 @@ describe('transport', () => {
 				describe('when library.config.broadcasts.active option is false', () => {
 					beforeEach(done => {
 						library.config.broadcasts.active = false;
-						transportInstance.shared.postBlock(query);
+						transportInstance.shared.postBlock(postBlockQuery);
 						done();
 					});
 
@@ -1719,18 +1715,18 @@ describe('transport', () => {
 
 				describe('when query is specified', () => {
 					beforeEach(done => {
-						transportInstance.shared.postBlock(query);
+						transportInstance.shared.postBlock(postBlockQuery);
 						done();
 					});
 
 					describe('when it throws', () => {
-						var blockValidationError = 'Failed to validate block schema';
+						const blockValidationError = 'Failed to validate block schema';
 
 						beforeEach(done => {
 							library.logic.block.objectNormalize = sinonSandbox
 								.stub()
 								.throws(blockValidationError);
-							transportInstance.shared.postBlock(query);
+							transportInstance.shared.postBlock(postBlockQuery);
 							done();
 						});
 
@@ -1759,7 +1755,7 @@ describe('transport', () => {
 							library.logic.block.objectNormalize = sinonSandbox
 								.stub()
 								.returns(blockMock);
-							transportInstance.shared.postBlock(query);
+							transportInstance.shared.postBlock(postBlockQuery);
 							done();
 						});
 
@@ -1767,7 +1763,7 @@ describe('transport', () => {
 							it('should call modules.blocks.verify.addBlockProperties with query.block', () => {
 								return expect(
 									modules.blocks.verify.addBlockProperties.calledWith(
-										query.block
+										postBlockQuery.block
 									)
 								).to.be.true;
 							});
@@ -1845,7 +1841,7 @@ describe('transport', () => {
 					});
 
 					describe('when peersFinder fails', () => {
-						var failedToFindPeerError = 'Failed to find peer ...';
+						const failedToFindPeerError = 'Failed to find peer ...';
 
 						beforeEach(done => {
 							req = {
@@ -1898,7 +1894,7 @@ describe('transport', () => {
 			});
 
 			describe('height', () => {
-				var currentHeight;
+				let currentHeight;
 
 				beforeEach(done => {
 					currentHeight = 12345;
@@ -1926,7 +1922,7 @@ describe('transport', () => {
 			});
 
 			describe('status', () => {
-				var headers;
+				let headers;
 
 				beforeEach(done => {
 					headers = {
@@ -2016,7 +2012,7 @@ describe('transport', () => {
 				});
 
 				describe('when __private.receiveSignature fails', () => {
-					var receiveSignatureError = 'Invalid signature body ...';
+					const receiveSignatureError = 'Invalid signature body ...';
 
 					beforeEach(done => {
 						query = {
@@ -2087,7 +2083,7 @@ describe('transport', () => {
 					});
 				});
 				describe('when library.schema.validate fails', () => {
-					var validateErr;
+					let validateErr;
 
 					beforeEach(done => {
 						validateErr = new Error('Transaction query did not match schema');
@@ -2112,18 +2108,21 @@ describe('transport', () => {
 			});
 
 			describe('getSignatures', () => {
-				var req;
+				let getSignaturesReq;
 
 				beforeEach(done => {
-					req = {};
+					getSignaturesReq = {};
 					modules.transactions.getMultisignatureTransactionList = sinonSandbox
 						.stub()
 						.returns(multisignatureTransactionsList);
-					transportInstance.shared.getSignatures(req, (err, res) => {
-						error = err;
-						result = res;
-						done();
-					});
+					transportInstance.shared.getSignatures(
+						getSignaturesReq,
+						(err, res) => {
+							error = err;
+							result = res;
+							done();
+						}
+					);
 				});
 
 				it('should call modules.transactions.getMultisignatureTransactionList with true and MAX_SHARED_TRANSACTIONS', () => {
@@ -2154,7 +2153,7 @@ describe('transport', () => {
 
 				describe('when some transactions returned by modules.transactions.getMultisignatureTransactionList are multisignature registration transactions', () => {
 					beforeEach(done => {
-						req = {};
+						getSignaturesReq = {};
 						// Make it so that the first transaction in the list is a multisignature registration transaction.
 						multisignatureTransactionsList[0] = {
 							id: '222675625422353767',
@@ -2173,11 +2172,14 @@ describe('transport', () => {
 						modules.transactions.getMultisignatureTransactionList = sinonSandbox
 							.stub()
 							.returns(multisignatureTransactionsList);
-						transportInstance.shared.getSignatures(req, (err, res) => {
-							error = err;
-							result = res;
-							done();
-						});
+						transportInstance.shared.getSignatures(
+							getSignaturesReq,
+							(err, res) => {
+								error = err;
+								result = res;
+								done();
+							}
+						);
 					});
 
 					it('should call callback with error = null', () => {
@@ -2272,7 +2274,7 @@ describe('transport', () => {
 				});
 
 				describe('when __private.receiveTransaction fails', () => {
-					var receiveTransactionError = 'Invalid transaction body ...';
+					const receiveTransactionError = 'Invalid transaction body ...';
 
 					beforeEach(done => {
 						__private.receiveTransaction = sinonSandbox
@@ -2343,7 +2345,7 @@ describe('transport', () => {
 				});
 
 				describe('when library.schema.validate fails', () => {
-					var validateErr;
+					let validateErr;
 
 					beforeEach(done => {
 						validateErr = new Error('Transaction query did not match schema');
@@ -2370,7 +2372,7 @@ describe('transport', () => {
 		});
 
 		describe('Transport.prototype.internal', () => {
-			var query;
+			let query;
 
 			describe('updatePeer', () => {
 				beforeEach(done => {
@@ -2390,7 +2392,7 @@ describe('transport', () => {
 				});
 
 				describe('when __private.checkInternalAccess fails', () => {
-					var validateErr;
+					let validateErr;
 
 					beforeEach(done => {
 						validateErr = 'Query did not match schema';
@@ -2443,7 +2445,7 @@ describe('transport', () => {
 					});
 
 					describe('when updateResult !== true', () => {
-						var errorCode = 4102;
+						const errorCode = 4102;
 						beforeEach(done => {
 							query = {
 								updateType: Rules.UPDATES.REMOVE,

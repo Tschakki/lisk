@@ -81,6 +81,16 @@ describe('transactionPool', () => {
 		message: sinonSandbox.spy(),
 	};
 
+	const removeQueuedTransactionSpy = sinonSandbox.spy(
+		TransactionPool.prototype,
+		'removeQueuedTransaction'
+	);
+
+	const removeMultisignatureTransactionSpy = sinonSandbox.spy(
+		TransactionPool.prototype,
+		'removeMultisignatureTransaction'
+	);
+
 	const resetStates = function() {
 		transactionPool.unconfirmed = _.cloneDeep(freshListState);
 		transactionPool.bundled = _.cloneDeep(freshListState);
@@ -116,6 +126,9 @@ describe('transactionPool', () => {
 			'modules.transactions.undoUnconfirmed',
 			dummyUndoUnconfirmed
 		);
+
+		removeQueuedTransactionSpy.reset();
+		removeMultisignatureTransactionSpy.reset();
 	};
 
 	before(done => {
@@ -226,6 +239,28 @@ describe('transactionPool', () => {
 				});
 			});
 		});
+
+		describe('jobsQueue', () => {
+			it('should register transactionPoolNextBundle with bundledInterval', () => {
+				expect(Object.keys(jobsQueue.jobs))
+					.to.be.an('array')
+					.and.lengthOf(2);
+				expect(jobsQueue.jobs).to.have.any.key('transactionPoolNextBundle');
+				return expect(
+					jobsQueue.jobs.transactionPoolNextBundle._idleTimeout
+				).to.equal(transactionPool.bundledInterval);
+			});
+
+			it('should register transactionPoolNextExpiry with expiryInterval', () => {
+				expect(Object.keys(jobsQueue.jobs))
+					.to.be.an('array')
+					.and.lengthOf(2);
+				expect(jobsQueue.jobs).to.have.any.key('transactionPoolNextExpiry');
+				return expect(
+					jobsQueue.jobs.transactionPoolNextExpiry._idleTimeout
+				).to.equal(transactionPool.expiryInterval);
+			});
+		});
 	});
 
 	describe('expireTransactions', () => {
@@ -244,14 +279,14 @@ describe('transactionPool', () => {
 		});
 
 		it('should expire all the transaction', done => {
-			expect(transactionPool.countUnconfirmed()).to.deep.eql(2);
-			expect(transactionPool.countQueued()).to.deep.eql(1);
-			expect(transactionPool.countMultisignature()).to.deep.eql(1);
+			expect(transactionPool.countUnconfirmed()).to.deep.equal(2);
+			expect(transactionPool.countQueued()).to.deep.equal(1);
+			expect(transactionPool.countMultisignature()).to.deep.equal(1);
 
 			transactionPool.expireTransactions(() => {
-				expect(transactionPool.countUnconfirmed()).to.deep.eql(1);
-				expect(transactionPool.countQueued()).to.deep.eql(0);
-				expect(transactionPool.countMultisignature()).to.deep.eql(0);
+				expect(transactionPool.countUnconfirmed()).to.deep.equal(1);
+				expect(transactionPool.countQueued()).to.deep.equal(0);
+				expect(transactionPool.countMultisignature()).to.deep.equal(0);
 				done();
 			});
 		});
@@ -263,7 +298,7 @@ describe('transactionPool', () => {
 		});
 
 		describe('when transaction is in pool', () => {
-			var validTransaction = '123';
+			const validTransaction = '123';
 
 			describe('unconfirmed list', () => {
 				describe('with index 0', () => {
@@ -555,14 +590,14 @@ describe('transactionPool', () => {
 
 	describe('countUnconfirmed', () => {
 		it('should return count of unconfirmed transaction exists in pool', () => {
-			return expect(transactionPool.countUnconfirmed()).to.deep.eql(2);
+			return expect(transactionPool.countUnconfirmed()).to.deep.equal(2);
 		});
 
 		it('should return the count of unconfirmed transaction exists in pool after removal', () => {
 			transactionPool.removeUnconfirmedTransaction('123');
-			expect(transactionPool.countUnconfirmed()).to.deep.eql(1);
+			expect(transactionPool.countUnconfirmed()).to.deep.equal(1);
 			transactionPool.removeUnconfirmedTransaction('1123');
-			return expect(transactionPool.countUnconfirmed()).to.deep.eql(0);
+			return expect(transactionPool.countUnconfirmed()).to.deep.equal(0);
 		});
 	});
 
@@ -709,7 +744,7 @@ describe('transactionPool', () => {
 			};
 			transactionPool.countBundled = sinonSandbox.stub().returns(10000);
 			transactionPool.queueTransaction(transaction, null, res => {
-				expect(res).to.deep.eql('Transaction pool is full');
+				expect(res).to.deep.equal('Transaction pool is full');
 				expect(transactionPool.getBundledTransaction(transaction.id)).to.be
 					.undefined;
 				done();
@@ -731,7 +766,7 @@ describe('transactionPool', () => {
 				};
 				transactionPool.countMultisignature = sinonSandbox.stub().returns(1001);
 				transactionPool.queueTransaction(transaction, null, res => {
-					expect(res).to.deep.eql('Transaction pool is full');
+					expect(res).to.deep.equal('Transaction pool is full');
 					expect(transactionPool.getMultisignatureTransaction(transaction.id))
 						.to.be.undefined;
 					done();
@@ -785,10 +820,10 @@ describe('transactionPool', () => {
 	});
 
 	describe('processUnconfirmedTransaction', () => {
-		let processVerifyTransaction;
+		let auxProcessVerifyTransaction;
 		beforeEach(done => {
 			resetStates();
-			processVerifyTransaction = TransactionPool.__get__(
+			auxProcessVerifyTransaction = TransactionPool.__get__(
 				'__private.processVerifyTransaction'
 			);
 			transactionPool.transactionInPool = sinonSandbox.stub();
@@ -798,7 +833,7 @@ describe('transactionPool', () => {
 		afterEach(done => {
 			TransactionPool.__set__(
 				'__private.processVerifyTransaction',
-				processVerifyTransaction
+				auxProcessVerifyTransaction
 			);
 			transactionPool.transactionInPool.returns(false);
 			done();
@@ -811,7 +846,7 @@ describe('transactionPool', () => {
 			};
 			transactionPool.transactionInPool.returns(true);
 			transactionPool.processUnconfirmedTransaction(transaction, true, res => {
-				expect(res).to.deep.eql(
+				expect(res).to.deep.equal(
 					'Transaction is already processed: 1311188423423423L'
 				);
 				done();
@@ -828,7 +863,7 @@ describe('transactionPool', () => {
 				.stub(transactionPool, 'queueTransaction')
 				.callsArgWith(2, 'Failed to queue bundled transaction');
 			transactionPool.processUnconfirmedTransaction(transaction, true, res => {
-				expect(res).to.deep.eql('Failed to queue bundled transaction');
+				expect(res).to.deep.equal('Failed to queue bundled transaction');
 				done();
 			});
 		});
@@ -841,7 +876,7 @@ describe('transactionPool', () => {
 			};
 			transactionPool.queueTransaction.callsArgWith(2, transaction);
 			transactionPool.processUnconfirmedTransaction(transaction, true, res => {
-				expect(res).to.deep.eql(transaction);
+				expect(res).to.deep.equal(transaction);
 				done();
 			});
 		});
@@ -862,7 +897,7 @@ describe('transactionPool', () => {
 			);
 
 			transactionPool.processUnconfirmedTransaction(transaction, true, res => {
-				expect(res).to.deep.eql('Failed to process unconfirmed transaction');
+				expect(res).to.deep.equal('Failed to process unconfirmed transaction');
 				done();
 			});
 		});
@@ -882,7 +917,7 @@ describe('transactionPool', () => {
 				processVerifyTransactionStub
 			);
 			transactionPool.processUnconfirmedTransaction(transaction, true, res => {
-				expect(res.id).to.deep.eql(transaction.id);
+				expect(res.id).to.deep.equal(transaction.id);
 				done();
 			});
 		});
@@ -911,15 +946,13 @@ describe('transactionPool', () => {
 					null
 				);
 
-			expect(
-				transactionPool.receiveTransactions(transaction, {}, (err, res) => {
-					expect(err).to.eql(
-						'Transaction is already processed: 10431411423423423L'
-					);
-					expect(res).to.deep.eql(transaction);
-					done();
-				})
-			);
+			transactionPool.receiveTransactions(transaction, {}, (err, res) => {
+				expect(err).to.eql(
+					'Transaction is already processed: 10431411423423423L'
+				);
+				expect(res).to.deep.equal(transaction);
+				done();
+			});
 		});
 
 		it('should add transaction to queue when bundle is enabled', done => {
@@ -929,13 +962,11 @@ describe('transactionPool', () => {
 			transactionPool.processUnconfirmedTransaction = sinonSandbox
 				.stub()
 				.callsArgWith(2, null, transaction);
-			expect(
-				transactionPool.receiveTransactions(transaction, {}, (err, res) => {
-					expect(err).to.be.null;
-					expect(res).to.deep.eql(transaction);
-					done();
-				})
-			);
+			transactionPool.receiveTransactions(transaction, {}, (err, res) => {
+				expect(err).to.be.null;
+				expect(res).to.deep.equal(transaction);
+				done();
+			});
 		});
 	});
 
@@ -977,11 +1008,11 @@ describe('transactionPool', () => {
 	});
 
 	describe('processBundled', () => {
-		let processVerifyTransaction;
+		let auxProcessVerifyTransaction;
 		beforeEach(done => {
 			resetStates();
 			transactionPool.addBundledTransaction({ id: '123', bundled: true });
-			processVerifyTransaction = TransactionPool.__get__(
+			auxProcessVerifyTransaction = TransactionPool.__get__(
 				'__private.processVerifyTransaction'
 			);
 			done();
@@ -990,7 +1021,7 @@ describe('transactionPool', () => {
 		afterEach(done => {
 			TransactionPool.__set__(
 				'__private.processVerifyTransaction',
-				processVerifyTransaction
+				auxProcessVerifyTransaction
 			);
 			done();
 		});
@@ -1004,10 +1035,10 @@ describe('transactionPool', () => {
 				processVerifyTransactionStub
 			);
 			transactionPool.processBundled(() => {
-				expect(logger.debug.args[0][0]).to.deep.eql(
+				expect(logger.debug.args[0][0]).to.deep.equal(
 					'Failed to process / verify bundled transaction: 123'
 				);
-				expect(logger.debug.args[0][1]).to.deep.eql(
+				expect(logger.debug.args[0][1]).to.deep.equal(
 					'Failed to process bundle transaction'
 				);
 				done();
@@ -1027,13 +1058,40 @@ describe('transactionPool', () => {
 				'Failed to queue bundled transaction'
 			);
 			transactionPool.processBundled(() => {
-				expect(logger.debug.args[0][0]).to.deep.eql(
+				expect(logger.debug.args[0][0]).to.deep.equal(
 					'Failed to queue bundled transaction: 123'
 				);
-				expect(logger.debug.args[0][1]).to.deep.eql(
+				expect(logger.debug.args[0][1]).to.deep.equal(
 					'Failed to queue bundled transaction'
 				);
 				done();
+			});
+		});
+
+		describe('when node is syncing', () => {
+			it('should not process bundled transactions', done => {
+				const getBundledTransactionListStub = sinonSandbox.stub();
+				const processVerifyTransactionStub = sinonSandbox.stub();
+				const queueTransactionStub = sinonSandbox.stub();
+				TransactionPool.__set__(
+					'TransactionPool.prototype.getBundledTransactionList',
+					getBundledTransactionListStub
+				);
+				TransactionPool.__set__(
+					'__private.processVerifyTransaction',
+					processVerifyTransactionStub
+				);
+				TransactionPool.__set__(
+					'__private.queueTransaction',
+					queueTransactionStub
+				);
+				loaderStub.syncing.returns(true);
+				transactionPool.processBundled(() => {
+					expect(getBundledTransactionListStub.called).to.be.false;
+					expect(processVerifyTransactionStub.called).to.be.false;
+					expect(queueTransactionStub.called).to.be.false;
+					done();
+				});
 			});
 		});
 	});
@@ -1273,7 +1331,7 @@ describe('transactionPool', () => {
 				.returns(unconfirmedCount);
 			transactionPool.fillPool(res => {
 				expect(res).to.be.undefined;
-				expect(logger.debug.args[0][0]).to.deep.eql(
+				expect(logger.debug.args[0][0]).to.deep.equal(
 					`Transaction pool size: ${unconfirmedCount}`
 				);
 				done();
@@ -1302,7 +1360,9 @@ describe('transactionPool', () => {
 			);
 			transactionPool.fillPool(res => {
 				expect(applyUnconfirmedListStub.called).to.be.true;
-				expect(applyUnconfirmedListStub.args[0][0]).to.deep.eql([transaction]);
+				expect(applyUnconfirmedListStub.args[0][0]).to.deep.equal([
+					transaction,
+				]);
 				expect(applyUnconfirmedListStub.args[0][1]).to.be.an('function');
 				expect(res).to.be.null;
 				done();
@@ -1520,6 +1580,28 @@ describe('transactionPool', () => {
 							});
 						});
 
+						it('should call removeQueuedTransaction when failed to process', () => {
+							return expect(removeQueuedTransactionSpy.callCount).to.eql(1);
+						});
+
+						it('should call removeQueuedTransaction with the correct transactionId', () => {
+							return expect(
+								removeQueuedTransactionSpy.calledWith(badTransaction.id)
+							).to.eql(true);
+						});
+
+						it('should call removeMultisignatureTransaction when failed to process', () => {
+							return expect(
+								removeMultisignatureTransactionSpy.callCount
+							).to.eql(1);
+						});
+
+						it('should call removeMultisignatureTransaction with the correct transactionId', () => {
+							return expect(
+								removeMultisignatureTransactionSpy.calledWith(badTransaction.id)
+							).to.eql(true);
+						});
+
 						after(resetStates);
 					});
 
@@ -1624,7 +1706,7 @@ describe('transactionPool', () => {
 						},
 					},
 				};
-				return expect(transactionTimeOut(transaction)).to.deep.eql(10 * 3600);
+				return expect(transactionTimeOut(transaction)).to.deep.equal(10 * 3600);
 			});
 
 			it('should return timeout for transaction with signatures and type not equal to MULTI', () => {
@@ -1632,7 +1714,7 @@ describe('transactionPool', () => {
 					id: '103111423423423',
 					signatures: [],
 				};
-				return expect(transactionTimeOut(transaction)).to.deep.eql(
+				return expect(transactionTimeOut(transaction)).to.deep.equal(
 					UNCONFIRMED_TRANSACTION_TIMEOUT * 8
 				);
 			});
@@ -1641,7 +1723,7 @@ describe('transactionPool', () => {
 				const transaction = {
 					id: '103111423423423',
 				};
-				return expect(transactionTimeOut(transaction)).to.deep.eql(
+				return expect(transactionTimeOut(transaction)).to.deep.equal(
 					UNCONFIRMED_TRANSACTION_TIMEOUT
 				);
 			});
@@ -1671,7 +1753,7 @@ describe('transactionPool', () => {
 				transactionTimeOut.returns(0);
 				expireTransactions(transactions, () => {
 					expect(logger.info.called).to.be.true;
-					expect(logger.info.args[0][0]).to.deep.eql(
+					expect(logger.info.args[0][0]).to.deep.equal(
 						`Expired transaction: ${
 							transactions[0].id
 						} received at: ${transactions[0].receivedAt.toUTCString()}`
@@ -1700,7 +1782,7 @@ describe('transactionPool', () => {
 
 			it('should return error when transaction is empty', done => {
 				_processVerifyTransaction(null, true, err => {
-					expect(err).to.deep.eql('Missing transaction');
+					expect(err).to.deep.equal('Missing transaction');
 					done();
 				});
 			});
@@ -1708,7 +1790,7 @@ describe('transactionPool', () => {
 			it('should return error when transaction is in unconfirmed queue', done => {
 				transactionPool.addUnconfirmedTransaction(transaction);
 				_processVerifyTransaction(transaction, true, err => {
-					expect(err).to.deep.eql(
+					expect(err).to.deep.equal(
 						'Transaction is already in unconfirmed state'
 					);
 					done();
@@ -1722,7 +1804,7 @@ describe('transactionPool', () => {
 				accountsStub.setAccountAndGet.callsArgWith(1, null, sender);
 				accountsStub.getAccount.callsArgWith(1, 'Requester not found', null);
 				_processVerifyTransaction(transaction, true, err => {
-					expect(err).to.deep.eql('Requester not found');
+					expect(err).to.deep.equal('Requester not found');
 					done();
 				});
 			});
@@ -1743,7 +1825,7 @@ describe('transactionPool', () => {
 				transactionPool.addQueuedTransaction(transaction);
 				_processVerifyTransaction(transaction, true, (err, sender) => {
 					expect(err).to.be.null;
-					expect(sender).to.deep.eql([transaction]);
+					expect(sender).to.deep.equal([transaction]);
 					done();
 				});
 			});
@@ -1755,8 +1837,8 @@ describe('transactionPool', () => {
 						.callsArgWith(3, 'error while processing');
 					transactionPool.addQueuedTransaction(transaction);
 					_processVerifyTransaction(transaction, true, (err, sender) => {
-						expect(err).to.deep.eql('error while processing');
-						expect(sender).to.deep.eql(sender);
+						expect(err).to.deep.equal('error while processing');
+						expect(sender).to.deep.equal(sender);
 						done();
 					});
 				});
@@ -1777,8 +1859,8 @@ describe('transactionPool', () => {
 						.callsArgWith(4, 'error while verifying');
 					transactionPool.addQueuedTransaction(transaction);
 					_processVerifyTransaction(transaction, true, (err, sender) => {
-						expect(err).to.deep.eql('error while verifying');
-						expect(sender).to.deep.eql(undefined);
+						expect(err).to.deep.equal('error while verifying');
+						expect(sender).to.deep.equal(undefined);
 						done();
 					});
 				});

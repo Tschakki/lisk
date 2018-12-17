@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-pending-tests */
 /*
  * Copyright © 2018 Lisk Foundation
  *
@@ -15,14 +14,14 @@
 
 'use strict';
 
-var genesisDelegates = require('../../data/genesis_delegates.json');
-var accountFixtures = require('../../fixtures/accounts');
-var application = require('../../common/application');
+const genesisDelegates = require('../../data/genesis_delegates.json');
+const accountFixtures = require('../../fixtures/accounts');
+const application = require('../../common/application');
 
 describe('node', () => {
-	var testDelegate = genesisDelegates.delegates[0];
-	var defaultPassword;
-	var library;
+	const testDelegate = genesisDelegates.delegates[0];
+	let defaultPassword;
+	let library;
 	const stubs = {};
 
 	before(done => {
@@ -44,6 +43,7 @@ describe('node', () => {
 	});
 
 	describe('constructor', () => {
+		/* eslint-disable mocha/no-pending-tests */
 		describe('library', () => {
 			it('should assign build');
 
@@ -63,33 +63,33 @@ describe('node', () => {
 		it('should call callback with error = null');
 
 		it('should call callback with result as a Node instance');
+		/* eslint-enable mocha/no-pending-tests */
 	});
 
 	describe('internal', () => {
-		var node_module;
+		let node_module;
 
 		before(done => {
 			node_module = library.modules.node;
 			done();
 		});
 
-		function updateForgingStatus(testDelegate, forging, cb) {
+		function updateForgingStatus(testDelegateArg, forging, cb) {
 			node_module.internal.getForgingStatus(
-				testDelegate.publicKey,
+				testDelegateArg.publicKey,
 				(err, res) => {
 					if (res.length) {
-						node_module.internal.updateForgingStatus(
-							testDelegate.publicKey,
-							testDelegate.password,
+						return node_module.internal.updateForgingStatus(
+							testDelegateArg.publicKey,
+							testDelegateArg.password,
 							forging,
 							cb
 						);
-					} else {
-						cb(err, {
-							publicKey: testDelegate.publicKey,
-							password: testDelegate.password,
-						});
 					}
+					return cb(err, {
+						publicKey: testDelegateArg.publicKey,
+						password: testDelegateArg.password,
+					});
 				}
 			);
 		}
@@ -113,7 +113,7 @@ describe('node', () => {
 			});
 
 			it('should return error with invalid publicKey', done => {
-				var invalidPublicKey =
+				const invalidPublicKey =
 					'9d3058175acab969f41ad9b86f7a2926c74258670fe56b37c429c01fca9fff0a';
 
 				node_module.internal.updateForgingStatus(
@@ -151,8 +151,8 @@ describe('node', () => {
 						testDelegate.publicKey,
 						defaultPassword,
 						false,
-						(err, res) => {
-							expect(err).to.not.exist;
+						(updateForgingStatusErr, res) => {
+							expect(updateForgingStatusErr).to.not.exist;
 							expect(res).to.eql({
 								publicKey: testDelegate.publicKey,
 								forging: false,
@@ -171,8 +171,8 @@ describe('node', () => {
 						testDelegate.publicKey,
 						defaultPassword,
 						true,
-						(err, res) => {
-							expect(err).to.not.exist;
+						(updateForgingStatusErr, res) => {
+							expect(updateForgingStatusErr).to.not.exist;
 							expect(res).to.eql({
 								publicKey: testDelegate.publicKey,
 								forging: true,
@@ -225,8 +225,8 @@ describe('node', () => {
 						});
 						node_module.internal.getForgingStatus(
 							testDelegate.publicKey,
-							(err, data) => {
-								expect(err).to.be.null;
+							(getForgingStatusErr, data) => {
+								expect(getForgingStatusErr).to.be.null;
 								expect(data[0]).to.deep.equal({
 									forging: false,
 									publicKey: testDelegate.publicKey,
@@ -252,7 +252,7 @@ describe('node', () => {
 			});
 
 			it('should return empty array when invalid publicKey is provided', done => {
-				var invalidPublicKey =
+				const invalidPublicKey =
 					'9d3058175acab969f41ad9b86f7a2926c74258670fe56b37c429c01fca9fff0a';
 				node_module.internal.getForgingStatus(invalidPublicKey, (err, data) => {
 					expect(err).to.be.null;
@@ -272,6 +272,7 @@ describe('node', () => {
 		});
 
 		describe('getConstants', () => {
+			/* eslint-disable mocha/no-pending-tests */
 			describe('when loaded = false', () => {
 				it('should call callback with error = "Blockchain is loading"');
 			});
@@ -315,6 +316,7 @@ describe('node', () => {
 					'should call callback with result containing version = library.config.version'
 				);
 			});
+			/* eslint-enable mocha/no-pending-tests */
 		});
 
 		describe('getStatus', () => {
@@ -452,6 +454,7 @@ describe('node', () => {
 	});
 
 	describe('onBind', () => {
+		/* eslint-disable mocha/no-pending-tests */
 		describe('modules', () => {
 			it('should assign blocks');
 
@@ -463,5 +466,6 @@ describe('node', () => {
 		});
 
 		it('should assign loaded = true');
+		/* eslint-enable mocha/no-pending-tests */
 	});
 });

@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-pending-tests */
 /*
  * Copyright © 2018 Lisk Foundation
  *
@@ -15,22 +14,22 @@
 
 'use strict';
 
-var async = require('async');
+const async = require('async');
 const blockVersion = require('../../../../logic/block_version.js');
-var application = require('../../../common/application');
-var modulesLoader = require('../../../common/modules_loader');
-var clearDatabaseTable = require('../../../common/db_sandbox')
+const application = require('../../../common/application');
+const modulesLoader = require('../../../common/modules_loader');
+const clearDatabaseTable = require('../../../common/db_sandbox')
 	.clearDatabaseTable;
-var loadTables = require('./process_tables_data.json');
+const loadTables = require('./process_tables_data.json');
 
 const { REWARDS } = global.constants;
 
 describe('system test (blocks) - process', () => {
-	var blocksProcess;
-	var blocks;
-	var db;
-	var originalBlockRewardsOffset;
-	var scope;
+	let blocksProcess;
+	let blocks;
+	let db;
+	let originalBlockRewardsOffset;
+	let scope;
 
 	before(done => {
 		// Force rewards start at 150-th block
@@ -69,7 +68,7 @@ describe('system test (blocks) - process', () => {
 							'forks_stat',
 							'votes WHERE "transactionId" = \'17502993173215211070\'',
 						],
-						(table, seriesCb) => {
+						table => {
 							clearDatabaseTable(db, modulesLoader.logger, table, seriesCb);
 						},
 						err => {
@@ -83,15 +82,15 @@ describe('system test (blocks) - process', () => {
 				loadTables: seriesCb => {
 					async.everySeries(
 						loadTables,
-						(table, seriesCb) => {
-							var cs = new db.$config.pgp.helpers.ColumnSet(table.fields, {
+						(table, everySeriesCb) => {
+							const cs = new db.$config.pgp.helpers.ColumnSet(table.fields, {
 								table: table.name,
 							});
-							var insert = db.$config.pgp.helpers.insert(table.data, cs);
+							const insert = db.$config.pgp.helpers.insert(table.data, cs);
 							db
 								.none(insert)
 								.then(() => {
-									seriesCb(null, true);
+									everySeriesCb(null, true);
 								})
 								.catch(err => {
 									return setImmediate(err);
@@ -110,22 +109,22 @@ describe('system test (blocks) - process', () => {
 				if (err) {
 					return done(err);
 				}
-				done();
+				return done();
 			}
 		);
 	});
 
 	describe('getCommonBlock()', () => {
 		describe('validation with definitions.CommonBlock', () => {
-			var validCommonBlock;
-			var blockHeightTwo = {
+			let validCommonBlock;
+			const blockHeightTwo = {
 				id: '3082931137036442832',
 				previousBlock: '6524861224470851795',
 				timestamp: '52684260',
 				height: 2,
 			};
 
-			var commonBlockValidationError;
+			let commonBlockValidationError;
 
 			beforeEach(() => {
 				return scope.schema.validate(
@@ -214,7 +213,7 @@ describe('system test (blocks) - process', () => {
 
 				blocks.lastBlock.set(loadedBlock);
 				expect(loadedBlock.height).to.equal(2);
-				done();
+				return done();
 			});
 		});
 
@@ -226,7 +225,7 @@ describe('system test (blocks) - process', () => {
 
 				blocks.lastBlock.set(loadedBlock);
 				expect(loadedBlock.height).to.equal(3);
-				done();
+				return done();
 			});
 		});
 	});
@@ -239,7 +238,7 @@ describe('system test (blocks) - process', () => {
 					return done();
 				}
 
-				done(loadedBlock);
+				return done(loadedBlock);
 			});
 		});
 
@@ -252,7 +251,7 @@ describe('system test (blocks) - process', () => {
 					return done();
 				}
 
-				done(loadedBlock);
+				return done(loadedBlock);
 			});
 		});
 
@@ -265,7 +264,7 @@ describe('system test (blocks) - process', () => {
 					return done();
 				}
 
-				done(loadedBlock);
+				return done(loadedBlock);
 			});
 		});
 
@@ -280,7 +279,7 @@ describe('system test (blocks) - process', () => {
 					return done();
 				}
 
-				done(loadedBlock);
+				return done(loadedBlock);
 			});
 		});
 
@@ -293,7 +292,7 @@ describe('system test (blocks) - process', () => {
 					return done();
 				}
 
-				done(loadedBlock);
+				return done(loadedBlock);
 			});
 		});
 
@@ -308,7 +307,7 @@ describe('system test (blocks) - process', () => {
 					return done();
 				}
 
-				done(loadedBlock);
+				return done(loadedBlock);
 			});
 		});
 
@@ -323,7 +322,7 @@ describe('system test (blocks) - process', () => {
 					return done();
 				}
 
-				done(loadedBlock);
+				return done(loadedBlock);
 			});
 		});
 	});

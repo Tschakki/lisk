@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-pending-tests */
 /*
  * Copyright © 2018 Lisk Foundation
  *
@@ -16,16 +15,16 @@
 'use strict';
 
 require('../../../functional.js');
-var swaggerEndpoint = require('../../../../common/swagger_spec');
-var apiHelpers = require('../../../../common/helpers/api');
+const SwaggerEndpoint = require('../../../../common/swagger_spec');
+const apiHelpers = require('../../../../common/helpers/api');
 
-var expectSwaggerParamError = apiHelpers.expectSwaggerParamError;
+const expectSwaggerParamError = apiHelpers.expectSwaggerParamError;
 
 describe('GET /node', () => {
 	describe('/constants', () => {
-		var endPoint = swaggerEndpoint('GET /node/constants 200');
+		const endPoint = new SwaggerEndpoint('GET /node/constants 200');
 
-		var constantsResponse;
+		let constantsResponse;
 
 		before(() => {
 			return endPoint.makeRequest().then(response => {
@@ -103,17 +102,19 @@ describe('GET /node', () => {
 	});
 
 	describe('/status', () => {
-		var ndoeStatusEndpoint = swaggerEndpoint('GET /node/status 200');
+		const ndoeStatusEndpoint = new SwaggerEndpoint('GET /node/status 200');
 
 		it('should return node status', () => {
 			return ndoeStatusEndpoint.makeRequest();
 		});
 
 		describe('GET /forging', () => {
-			var forgingEndpoint = new swaggerEndpoint('GET /node/status/forging');
+			const forgingEndpoint = new SwaggerEndpoint('GET /node/status/forging');
 
+			/* eslint-disable mocha/no-pending-tests */
 			// TODO: Find a library for supertest to make request from a proxy server
 			it('called from unauthorized IP should fail');
+			/* eslint-enable mocha/no-pending-tests */
 
 			it('using no params should return full list of internal forgers', () => {
 				return forgingEndpoint.makeRequest({}, 200).then(res => {
@@ -140,7 +141,7 @@ describe('GET /node', () => {
 			});
 
 			it('using existing publicKey should be ok', () => {
-				var publicKey = __testContext.config.forging.delegates[0].publicKey;
+				const publicKey = __testContext.config.forging.delegates[0].publicKey;
 
 				return forgingEndpoint.makeRequest({ publicKey }, 200).then(res => {
 					expect(res.body.data).to.have.length(1);
@@ -149,7 +150,7 @@ describe('GET /node', () => {
 			});
 
 			it('using available publicKey should be ok', () => {
-				var publicKey = __testContext.config.forging.delegates[0].publicKey;
+				const publicKey = __testContext.config.forging.delegates[0].publicKey;
 
 				return forgingEndpoint.makeRequest({ publicKey }, 200).then(res => {
 					expect(res.body.data[0].publicKey).to.be.eql(publicKey);

@@ -68,7 +68,7 @@ module.exports = function(configurations, network) {
 						// to keep consistency with api/controllers/peers.js/getPeers
 						delete peer.updated;
 						delete peer.clock;
-						expect(peer).to.have.all.keys(peerProps);
+						return expect(peer).to.have.all.keys(peerProps);
 					});
 				});
 			});
@@ -82,7 +82,7 @@ module.exports = function(configurations, network) {
 						// to update across all nodes.
 						setTimeout(() => {
 							resolve();
-						}, 5000);
+						}, 10000);
 					});
 				});
 			});
@@ -134,7 +134,7 @@ module.exports = function(configurations, network) {
 								expect(peer.wsPort).to.be.gte(5000);
 								expect(peer.wsPort).to.be.lt(5010);
 								expect(peer.version).to.not.empty;
-								expect(peer.nonce).to.not.empty;
+								return expect(peer.nonce).to.not.empty;
 							});
 						});
 					});
@@ -148,7 +148,7 @@ module.exports = function(configurations, network) {
 									return peer.height > 1;
 								});
 							})
-						);
+						).to.be.true;
 					});
 				});
 

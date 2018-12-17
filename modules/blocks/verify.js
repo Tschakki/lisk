@@ -126,16 +126,15 @@ __private.checkTransaction = function(block, transaction, checkExists, cb) {
 				modules.delegates.fork(block, 2);
 				// Undo the offending transaction.
 				// DATABASE: write
-				modules.transactions.undoUnconfirmed(
+				return modules.transactions.undoUnconfirmed(
 					transaction,
 					undoUnconfirmedErr => {
 						modules.transactions.removeUnconfirmedTransaction(transaction.id);
 						return setImmediate(cb, undoUnconfirmedErr || waterCbErr);
 					}
 				);
-			} else {
-				return setImmediate(cb, waterCbErr);
 			}
+			return setImmediate(cb, waterCbErr);
 		}
 	);
 };
@@ -252,8 +251,8 @@ __private.verifyReward = function(block, result) {
 	const expectedReward = __private.blockReward.calcReward(block.height);
 	if (
 		block.height !== 1 &&
-		!expectedReward.equals(block.reward) &&
-		exceptions.blockRewards.indexOf(block.id) === -1
+		!expectedReward.isEqualTo(block.reward) &&
+		!exceptions.blockRewards.includes(block.id)
 	) {
 		result.errors.push(
 			['Invalid block reward:', block.reward, 'expected:', expectedReward].join(
@@ -347,11 +346,11 @@ __private.verifyPayload = function(block, result) {
 		result.errors.push('Invalid payload hash');
 	}
 
-	if (!totalAmount.equals(block.totalAmount)) {
+	if (!totalAmount.isEqualTo(block.totalAmount)) {
 		result.errors.push('Invalid total amount');
 	}
 
-	if (!totalFee.equals(block.totalFee)) {
+	if (!totalFee.isEqualTo(block.totalFee)) {
 		result.errors.push('Invalid total fee');
 	}
 
@@ -590,16 +589,16 @@ Verify.prototype.deleteBlockProperties = function(block) {
 	if (typeof reducedBlock.numberOfTransactions === 'number') {
 		delete reducedBlock.numberOfTransactions;
 	}
-	if (reducedBlock.totalAmount.equals(0)) {
+	if (reducedBlock.totalAmount.isEqualTo(0)) {
 		delete reducedBlock.totalAmount;
 	}
-	if (reducedBlock.totalFee.equals(0)) {
+	if (reducedBlock.totalFee.isEqualTo(0)) {
 		delete reducedBlock.totalFee;
 	}
 	if (reducedBlock.payloadLength === 0) {
 		delete reducedBlock.payloadLength;
 	}
-	if (reducedBlock.reward.equals(0)) {
+	if (reducedBlock.reward.isEqualTo(0)) {
 		delete reducedBlock.reward;
 	}
 	if (reducedBlock.transactions && reducedBlock.transactions.length === 0) {
@@ -665,7 +664,7 @@ __private.normalizeBlock = function(block, cb) {
 __private.verifyBlock = function(block, cb) {
 	// Sanity check of the block, if values are coherent
 	// No access to database
-	var result = self.verifyBlock(block);
+	const result = self.verifyBlock(block);
 
 	if (!result.verified) {
 		library.logger.error(
@@ -692,7 +691,7 @@ __private.broadcastBlock = function(block, broadcast, cb) {
 	if (broadcast) {
 		try {
 			// Delete default properties
-			var reducedBlock = self.deleteBlockProperties(block);
+			const reducedBlock = self.deleteBlockProperties(block);
 			modules.blocks.chain.broadcastReducedBlock(reducedBlock, broadcast);
 		} catch (err) {
 			return setImmediate(cb, err);
@@ -803,7 +802,7 @@ Verify.prototype.processBlock = function(block, broadcast, saveBlock, cb) {
 		return setImmediate(cb, 'Blockchain is loading');
 	}
 
-	async.series(
+	return async.series(
 		{
 			addBlockProperties(seriesCb) {
 				__private.addBlockProperties(block, broadcast, seriesCb);
@@ -822,7 +821,7 @@ Verify.prototype.processBlock = function(block, broadcast, saveBlock, cb) {
 				if (!saveBlock) {
 					return setImmediate(seriesCb);
 				}
-				__private.checkExists(block, seriesCb);
+				return __private.checkExists(block, seriesCb);
 			},
 			validateBlockSlot(seriesCb) {
 				__private.validateBlockSlot(block, seriesCb);

@@ -116,13 +116,13 @@ describe('Broadcaster', () => {
 		});
 
 		it('should load libraries', () => {
-			expect(library.logger).to.deep.eql(loggerStub);
-			expect(library.logic.peers).to.deep.eql(peersStub);
-			expect(library.config).to.deep.eql({
+			expect(library.logger).to.deep.equal(loggerStub);
+			expect(library.logic.peers).to.deep.equal(peersStub);
+			expect(library.config).to.deep.equal({
 				broadcasts,
 				forging: { force: true },
 			});
-			return expect(library.logic.transaction).to.deep.eql(transactionStub);
+			return expect(library.logic.transaction).to.deep.equal(transactionStub);
 		});
 
 		it('should return Broadcaster instance', () => {
@@ -139,11 +139,11 @@ describe('Broadcaster', () => {
 		});
 
 		it('should register jobsQueue', () => {
-			const nextRelease = Broadcaster.__get__('nextRelease');
+			const auxNextRelease = Broadcaster.__get__('nextRelease');
 			expect(jobsQueue.register.calledOnce).to.be.true;
 			return expect(jobsQueue.register).calledWith(
 				'broadcasterNextRelease',
-				nextRelease,
+				auxNextRelease,
 				broadcasts.broadcastInterval
 			);
 		});
@@ -160,9 +160,9 @@ describe('Broadcaster', () => {
 			broadcaster.getPeers({}, (err, peers) => {
 				expect(err).to.be.null;
 				expect(peers).to.be.an('Array').that.is.not.empty;
-				expect(peers).to.deep.eql(peerList);
+				expect(peers).to.deep.equal(peerList);
 				expect(peersStub.listRandomConnected.called).to.be.true;
-				expect(peersStub.listRandomConnected.args[0][0]).to.not.eql(params);
+				expect(peersStub.listRandomConnected.args[0][0]).to.not.equal(params);
 				done();
 			});
 		});
@@ -171,7 +171,7 @@ describe('Broadcaster', () => {
 			broadcaster.getPeers(params, (err, peers) => {
 				expect(err).to.be.null;
 				expect(peers).to.be.an('Array').that.is.not.empty;
-				expect(peers).to.deep.eql(peerList);
+				expect(peers).to.deep.equal(peerList);
 				expect(peersStub.listRandomConnected.calledOnce).to.be.true;
 				done();
 			});
@@ -182,7 +182,7 @@ describe('Broadcaster', () => {
 			peerParams.limit = 100;
 			broadcaster.getPeers(peerParams, () => {
 				expect(peersStub.listRandomConnected.calledOnce).to.be.true;
-				expect(peersStub.listRandomConnected.args[0][0]).to.deep.eql(
+				expect(peersStub.listRandomConnected.args[0][0]).to.deep.equal(
 					peerParams
 				);
 				expect(peersStub.listRandomConnected.args[0][1]).to.not.be.a(
@@ -274,10 +274,10 @@ describe('Broadcaster', () => {
 		});
 
 		it('should push params and options to queue', () => {
-			const params = {};
-			const options = {};
-			expect(broadcaster.enqueue(params, options)).to.eql(1);
-			return expect(broadcaster.enqueue(params, options)).to.eql(2);
+			const auxParams = {};
+			const auxOptions = {};
+			expect(broadcaster.enqueue(auxParams, auxOptions)).to.eql(1);
+			return expect(broadcaster.enqueue(auxParams, auxOptions)).to.eql(2);
 		});
 	});
 
@@ -486,7 +486,7 @@ describe('Broadcaster', () => {
 		});
 
 		describe('having many transaction and signatures broadcasts in queue', () => {
-			const broadcasts = [];
+			const auxBroadcasts = [];
 			beforeEach(done => {
 				broadcaster.enqueue(params, {
 					api: 'postTransactions',
@@ -503,7 +503,7 @@ describe('Broadcaster', () => {
 					data: { transaction: { id: 3 } },
 					immediate: false,
 				});
-				broadcasts.push(
+				auxBroadcasts.push(
 					Object.assign(
 						{},
 						{ params },
@@ -516,7 +516,7 @@ describe('Broadcaster', () => {
 						}
 					)
 				);
-				broadcasts.push(
+				auxBroadcasts.push(
 					Object.assign(
 						{},
 						{ params },
@@ -529,7 +529,7 @@ describe('Broadcaster', () => {
 						}
 					)
 				);
-				broadcasts.push(
+				auxBroadcasts.push(
 					Object.assign(
 						{},
 						{ params },
@@ -552,7 +552,7 @@ describe('Broadcaster', () => {
 					data: { signature: { transactionId: 2 } },
 					immediate: false,
 				});
-				broadcasts.push(
+				auxBroadcasts.push(
 					Object.assign(
 						{},
 						{ params },
@@ -565,7 +565,7 @@ describe('Broadcaster', () => {
 						}
 					)
 				);
-				broadcasts.push(
+				auxBroadcasts.push(
 					Object.assign(
 						{},
 						{ params },
@@ -590,7 +590,7 @@ describe('Broadcaster', () => {
 					filterQueue(() => {
 						expect(broadcaster.queue)
 							.to.be.an('Array')
-							.to.eql(broadcasts);
+							.to.eql(auxBroadcasts);
 						done();
 					});
 				});
@@ -605,12 +605,12 @@ describe('Broadcaster', () => {
 		});
 
 		it('should be able to squash the queue', () => {
-			const broadcasts = {
+			const auxBroadcasts = {
 				broadcast: {
 					options: { api: 'postTransactions', data: { peer: {}, block: {} } },
 				},
 			};
-			return expect(squashQueue(broadcasts)).to.eql([
+			return expect(squashQueue(auxBroadcasts)).to.eql([
 				{
 					immediate: false,
 					options: {

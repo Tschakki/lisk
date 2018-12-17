@@ -64,6 +64,7 @@ class Vote {
 	 * @returns {SetImmediate} error
 	 * @todo Add description for the params
 	 */
+
 	/* eslint-disable class-methods-use-this */
 	undoConfirmed(transaction, block, sender, cb, tx) {
 		if (transaction.asset.votes === null) {
@@ -72,7 +73,7 @@ class Vote {
 
 		const votesInvert = Diff.reverse(transaction.asset.votes);
 
-		library.account.merge(
+		return library.account.merge(
 			sender.address,
 			{
 				delegates: votesInvert,
@@ -82,6 +83,7 @@ class Vote {
 			tx
 		);
 	}
+	/* eslint-enable class-methods-use-this */
 
 	/**
 	 * Calls Diff.reverse to change asset.votes signs and merges account to
@@ -101,13 +103,14 @@ class Vote {
 
 		const votesInvert = Diff.reverse(transaction.asset.votes);
 
-		library.account.merge(
+		return library.account.merge(
 			sender.address,
 			{ u_delegates: votesInvert },
 			mergeErr => setImmediate(cb, mergeErr),
 			tx
 		);
 	}
+	/* eslint-enable class-methods-use-this */
 }
 
 // TODO: The below functions should be converted into static functions,
@@ -147,7 +150,7 @@ Vote.prototype.verify = function(transaction, sender, cb, tx) {
 		[
 			waterCb => {
 				const amount = new Bignum(transaction.amount);
-				if (amount.greaterThan(0)) {
+				if (amount.isGreaterThan(0)) {
 					return setImmediate(waterCb, 'Invalid transaction amount');
 				}
 
@@ -271,7 +274,7 @@ Vote.prototype.checkConfirmedDelegates = function(transaction, cb, tx) {
 		transaction.senderPublicKey,
 		transaction.asset.votes,
 		err => {
-			if (err && exceptions.votes.indexOf(transaction.id) > -1) {
+			if (err && exceptions.votes.includes(transaction.id)) {
 				library.logger.debug(err);
 				library.logger.debug(JSON.stringify(transaction));
 				err = null;
@@ -296,7 +299,7 @@ Vote.prototype.checkUnconfirmedDelegates = function(transaction, cb, tx) {
 		transaction.senderPublicKey,
 		transaction.asset.votes,
 		err => {
-			if (err && exceptions.votes.indexOf(transaction.id) > -1) {
+			if (err && exceptions.votes.includes(transaction.id)) {
 				library.logger.debug(err);
 				library.logger.debug(JSON.stringify(transaction));
 				err = null;

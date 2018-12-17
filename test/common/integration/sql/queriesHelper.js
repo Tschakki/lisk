@@ -11,13 +11,13 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  */
-/* eslint-disable class-methods-use-this */
 
 'use strict';
 
 const path = require('path');
 const QueryFile = require('pg-promise').QueryFile;
-const slots = require('../../../../helpers/slots');
+
+const { ACTIVE_DELEGATES } = global.constants;
 
 let self;
 
@@ -34,6 +34,7 @@ class Queries {
 		self = this;
 	}
 
+	/* eslint-disable class-methods-use-this */
 	validateAccountsBalances() {
 		return self.db.query(self.validateAccountsBalancesQuery);
 	}
@@ -61,9 +62,7 @@ class Queries {
 
 	getDelegatesOrderedByVote() {
 		return self.db.query(
-			`SELECT "publicKey", vote FROM mem_accounts ORDER BY vote DESC, "publicKey" ASC LIMIT ${
-				slots.delegates
-			}`
+			`SELECT "publicKey", vote FROM mem_accounts ORDER BY vote DESC, "publicKey" ASC LIMIT ${ACTIVE_DELEGATES}`
 		);
 	}
 
@@ -118,6 +117,7 @@ class Queries {
 			'SELECT "dependentId", ARRAY_AGG("accountId") FROM mem_accounts2delegates GROUP BY "dependentId"'
 		);
 	}
+	/* eslint-enable class-methods-use-this */
 }
 
 module.exports = Queries;

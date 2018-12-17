@@ -63,14 +63,13 @@ class Network {
 					if (err) {
 						return reject(
 							new Error(
-								`Failed to establish monitoring connections due to error: ${
-									err.message || err
-								}`
+								`Failed to establish monitoring connections due to error: ${err.message ||
+									err}`
 							)
 						);
 					}
 					this.sockets = socketsResult;
-					resolve(socketsResult);
+					return resolve(socketsResult);
 				}
 			);
 		});
@@ -83,7 +82,7 @@ class Network {
 					return reject(err);
 				}
 				this.sockets = [];
-				resolve();
+				return resolve();
 			});
 		});
 	}
@@ -99,8 +98,7 @@ class Network {
 		options = options || {};
 		return Promise.resolve()
 			.then(() => {
-				return this.generatePM2Configs()
-				.then(pm2Configs => {
+				return this.generatePM2Configs().then(pm2Configs => {
 					this.pm2ConfigMap = {};
 					pm2Configs.apps.forEach(pm2Config => {
 						this.pm2ConfigMap[pm2Config.name] = pm2Config;
@@ -121,11 +119,12 @@ class Network {
 			})
 			.then(() => {
 				if (options.enableForging) {
-					return this.enableForgingForDelegates()
-						.then(() => {
-							return this.waitForBlocksOnAllNodes(1);
-						});
+					return this.enableForgingForDelegates().then(() => {
+						return this.waitForBlocksOnAllNodes(1);
+					});
 				}
+
+				return true;
 			})
 			.then(() => {
 				return this.establishMonitoringSocketsConnections();
@@ -141,7 +140,7 @@ class Network {
 						if (err) {
 							return reject(err);
 						}
-						resolve();
+						return resolve();
 					}, WAIT_BEFORE_CONNECT_MS);
 				});
 			});
@@ -153,12 +152,13 @@ class Network {
 			config.generatePM2Configs(this.configurations, (err, pm2Configs) => {
 				if (err) {
 					return reject(
-						new Error(`Failed to generate PM2 configs due to error: ${
-							err.message || err
-						}`)
+						new Error(
+							`Failed to generate PM2 configs due to error: ${err.message ||
+								err}`
+						)
 					);
 				}
-				resolve(pm2Configs);
+				return resolve(pm2Configs);
 			});
 		});
 	}
@@ -169,12 +169,12 @@ class Network {
 			shell.recreateDatabases(this.configurations, err => {
 				if (err) {
 					return reject(
-						new Error(`Failed to recreate databases due to error: ${
-							err.message || err
-						}`)
+						new Error(
+							`Failed to recreate databases due to error: ${err.message || err}`
+						)
 					);
 				}
-				resolve();
+				return resolve();
 			});
 		});
 	}
@@ -185,12 +185,12 @@ class Network {
 			shell.clearLogs(err => {
 				if (err) {
 					return reject(
-						new Error(`Failed to clear all logs due to error: ${
-							err.message || err
-						}`)
+						new Error(
+							`Failed to clear all logs due to error: ${err.message || err}`
+						)
 					);
 				}
-				resolve();
+				return resolve();
 			});
 		});
 	}
@@ -201,12 +201,12 @@ class Network {
 			shell.launchTestNodes(err => {
 				if (err) {
 					return reject(
-						new Error(`Failed to launch nest nodes due to error: ${
-							err.message || err
-						}`)
+						new Error(
+							`Failed to launch nest nodes due to error: ${err.message || err}`
+						)
 					);
 				}
-				resolve();
+				return resolve();
 			});
 		});
 	}
@@ -220,7 +220,7 @@ class Network {
 						if (err) {
 							return reject(err);
 						}
-						resolve();
+						return resolve();
 					});
 				});
 			})
@@ -242,30 +242,29 @@ class Network {
 
 		return new Promise((resolve, reject) => {
 			waitFor.blockchainReady(
-				err => {
-					if (err) {
-						return reject(
-							new Error(`Failed to wait for node ${
-								nodeName
-							} to be ready due to error: ${
-								err.message || err
-							}`)
-						);
-					}
-					resolve();
-				},
 				retries,
 				timeout,
 				`http://${configuration.ip}:${configuration.httpPort}`,
-				!logRetries
+				!logRetries,
+				err => {
+					if (err) {
+						return reject(
+							new Error(
+								`Failed to wait for node ${nodeName} to be ready due to error: ${err.message ||
+									err}`
+							)
+						);
+					}
+					return resolve();
+				}
 			);
 		});
 	}
 
 	waitForNodesToBeReady(nodeNames, logRetries) {
-		this.logger.log(`Waiting for nodes ${
-			nodeNames.join(', ')
-		} to load the blockchain`);
+		this.logger.log(
+			`Waiting for nodes ${nodeNames.join(', ')} to load the blockchain`
+		);
 
 		const nodeReadyPromises = nodeNames.map(nodeName => {
 			return this.waitForNodeToBeReady(nodeName, logRetries);
@@ -294,27 +293,24 @@ class Network {
 		return new Promise((resolve, reject) => {
 			waitFor.blocks(
 				blocksToWait,
+				`http://${configuration.ip}:${configuration.httpPort}`,
 				err => {
 					if (err) {
 						return reject(
-							new Error(`Failed to wait for blocks on node ${
-								nodeName
-							} due to error: ${
-								err.message || err
-							}`)
+							new Error(
+								`Failed to wait for blocks on node ${nodeName} due to error: ${err.message ||
+									err}`
+							)
 						);
 					}
-					resolve();
-				},
-				`http://${configuration.ip}:${configuration.httpPort}`
+					return resolve();
+				}
 			);
 		});
 	}
 
 	waitForBlocksOnNodes(nodeNames, blocksToWait) {
-		this.logger.log(`Waiting for blocks on nodes ${
-			nodeNames.join(', ')
-		}`);
+		this.logger.log(`Waiting for blocks on nodes ${nodeNames.join(', ')}`);
 
 		const nodeBlocksPromises = nodeNames.map(nodeName => {
 			return this.waitForBlocksOnNode(nodeName, blocksToWait);
@@ -335,16 +331,17 @@ class Network {
 
 		const enableForgingPromises = [];
 		this.configurations.forEach(configuration => {
-			configuration.forging.delegates.map(keys => {
-				if (!configuration.forging.force) {
+			configuration.forging.delegates
+				.filter(() => !configuration.forging.force)
+				.map(keys => {
 					const enableForgingPromise = utils.http.enableForging(
 						keys,
 						configuration.httpPort
 					);
-					enableForgingPromises.push(enableForgingPromise);
-				}
-			});
+					return enableForgingPromises.push(enableForgingPromise);
+				});
 		});
+
 		return Promise.all(enableForgingPromises)
 			.then(forgingResults => {
 				const someFailures = forgingResults.some(forgingResult => {
@@ -356,31 +353,32 @@ class Network {
 			})
 			.catch(err => {
 				// Catch and rethrow promise error as higher level error.
-				throw new Error(`Failed to enable forging for delegates due to error: ${
-					err.message || err
-				}`);
+				throw new Error(
+					`Failed to enable forging for delegates due to error: ${err.message ||
+						err}`
+				);
 			});
 	}
 
-  getAllPeersLists() {
-    return Promise.all(
-      this.sockets.map(socket => {
-        if (socket.state === 'open') {
-          return socket.call('list', {});
-        }
-        return null;
-      })
-      .filter(result => {
-        return result !== null;
-      })
-    ).then(result => {
+	getAllPeersLists() {
+		return Promise.all(
+			this.sockets
+				.map(socket => {
+					if (socket.state === 'open') {
+						return socket.call('list', {});
+					}
+					return null;
+				})
+				.filter(result => {
+					return result !== null;
+				})
+		).then(result => {
 			return result;
 		});
 	}
 
 	getAllPeers() {
-		return this.getAllPeersLists()
-		.then(peerListResults => {
+		return this.getAllPeersLists().then(peerListResults => {
 			const peersMap = {};
 			peerListResults.forEach(result => {
 				if (result.peers) {
@@ -402,16 +400,20 @@ class Network {
 			// to the pm2 flush command, we should use that instead of removing the
 			// log files manually. Currently pm2 flush clears the logs for all nodes.
 			const sanitizedNodeName = nodeName.replace(/_/g, '-');
-			childProcess.exec(`rm -rf test/network/logs/lisk-test-${sanitizedNodeName}.*`, err => {
-				if (err) {
-					return reject(
-						new Error(`Failed to clear logs for node ${nodeName}: ${
-							err.message || err
-						}`)
-					);
+			childProcess.exec(
+				`rm -rf test/network/logs/lisk-test-${sanitizedNodeName}.*`,
+				err => {
+					if (err) {
+						return reject(
+							new Error(
+								`Failed to clear logs for node ${nodeName}: ${err.message ||
+									err}`
+							)
+						);
+					}
+					return resolve();
 				}
-				resolve();
-			});
+			);
 		});
 	}
 
@@ -421,12 +423,10 @@ class Network {
 			childProcess.exec(`node_modules/.bin/pm2 stop ${nodeName}`, err => {
 				if (err) {
 					return reject(
-						new Error(`Failed to stop node ${nodeName}: ${
-							err.message || err
-						}`)
+						new Error(`Failed to stop node ${nodeName}: ${err.message || err}`)
 					);
 				}
-				resolve();
+				return resolve();
 			});
 		});
 	}
@@ -436,18 +436,18 @@ class Network {
 			childProcess.exec(`node_modules/.bin/pm2 start ${nodeName}`, err => {
 				if (err) {
 					return reject(
-						new Error(`Failed to start node ${nodeName}: ${
-							err.message || err
-						}`)
+						new Error(`Failed to start node ${nodeName}: ${err.message || err}`)
 					);
 				}
-				resolve();
+				return resolve();
 			});
 		});
 		if (waitForSync) {
 			startPromise = startPromise.then(() => {
 				return this.waitForNodeToBeReady(nodeName).catch(() => {
-					throw new Error(`Failed to start node ${nodeName} because it did not sync before timeout`);
+					throw new Error(
+						`Failed to start node ${nodeName} because it did not sync before timeout`
+					);
 				});
 			});
 		}
@@ -455,10 +455,9 @@ class Network {
 	}
 
 	restartNode(nodeName, waitForSync) {
-		return this.stopNode(nodeName)
-			.then(() => {
-				return this.startNode(nodeName, waitForSync);
-			});
+		return this.stopNode(nodeName).then(() => {
+			return this.startNode(nodeName, waitForSync);
+		});
 	}
 
 	restartAllNodes(nodeNamesList, waitForSync) {

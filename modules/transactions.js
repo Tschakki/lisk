@@ -102,6 +102,11 @@ class Transactions {
 __private.list = function(filter, cb) {
 	const params = {};
 	const where = [];
+
+	if (filter.data) {
+		filter.data = Buffer.from(filter.data, 'utf8');
+	}
+
 	const allowedFieldsMap = {
 		senderIdOrRecipientId:
 			'("t_senderId" = ${senderIdOrRecipientId} OR "t_recipientId" = ${senderIdOrRecipientId})',
@@ -121,6 +126,8 @@ __private.list = function(filter, cb) {
 		maxAmount: '"t_amount" <= ${maxAmount}',
 		type: '"t_type" = ${type}',
 		minConfirmations: 'confirmations >= ${minConfirmations}',
+		data:
+			't_id IN (SELECT transfer."transactionId" FROM transfer WHERE transfer.data LIKE ${data})',
 		limit: null,
 		offset: null,
 		sort: null,
@@ -221,7 +228,7 @@ __private.list = function(filter, cb) {
 	let rawTransactionRows;
 	let count;
 
-	library.db.transactions
+	return library.db.transactions
 		.countList(
 			Object.assign(
 				{},
@@ -642,7 +649,7 @@ Transactions.prototype.applyUnconfirmed = function(
 	if (!sender && transaction.blockId !== library.genesisBlock.block.id) {
 		return setImmediate(cb, 'Invalid block id');
 	} else if (transaction.requesterPublicKey) {
-		modules.accounts.getAccount(
+		return modules.accounts.getAccount(
 			{ publicKey: transaction.requesterPublicKey },
 			(err, requester) => {
 				if (err) {
@@ -653,7 +660,7 @@ Transactions.prototype.applyUnconfirmed = function(
 					return setImmediate(cb, 'Requester not found');
 				}
 
-				library.logic.transaction.applyUnconfirmed(
+				return library.logic.transaction.applyUnconfirmed(
 					transaction,
 					sender,
 					requester,
@@ -663,9 +670,13 @@ Transactions.prototype.applyUnconfirmed = function(
 			},
 			tx
 		);
-	} else {
-		library.logic.transaction.applyUnconfirmed(transaction, sender, cb, tx);
 	}
+	return library.logic.transaction.applyUnconfirmed(
+		transaction,
+		sender,
+		cb,
+		tx
+	);
 };
 
 /**
@@ -685,7 +696,12 @@ Transactions.prototype.undoUnconfirmed = function(transaction, cb, tx) {
 			if (err) {
 				return setImmediate(cb, err);
 			}
-			library.logic.transaction.undoUnconfirmed(transaction, sender, cb, tx);
+			return library.logic.transaction.undoUnconfirmed(
+				transaction,
+				sender,
+				cb,
+				tx
+			);
 		},
 		tx
 	);
@@ -853,7 +869,7 @@ Transactions.prototype.shared = {
 						return setImmediate(waterCb, null, cachedCount, null);
 					}
 
-					library.db.transactions
+					return library.db.transactions
 						.count()
 						.then(transactionsCount =>
 							setImmediate(waterCb, null, null, transactionsCount)
@@ -866,7 +882,7 @@ Transactions.prototype.shared = {
 						return setImmediate(waterCb, null, cachedCount);
 					}
 
-					modules.cache.setJsonForKey(
+					return modules.cache.setJsonForKey(
 						modules.cache.KEYS.transactionCount,
 						{
 							confirmed: dbCount,
