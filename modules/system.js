@@ -270,6 +270,13 @@ System.prototype.update = function(cb) {
 			},
 		},
 		err => {
+			library.logger.elk(
+				JSON.stringify({
+					event: 'updateMyself',
+					progress: 'stop',
+					headers: __private,
+				})
+			);
 			library.logger.debug('System headers', __private);
 			return setImmediate(cb, err);
 		}
